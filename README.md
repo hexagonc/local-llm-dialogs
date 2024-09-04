@@ -16,16 +16,17 @@ This project demonstrates how to use off-the-shelf local and remote large langua
 2. After all files are extracted, run either *install_windows.bat* if installing on Windows or *install.sh* if running on MacOS or Linux.  Be sure to run `chmod +x install.sh` to make the sure executable and run `source venv/bin/activate` after the script succeeds.
 3. Update *config.json*, overriding defaults if necessary and, especially, specifying your OpenAI API key if you intend to access OpenAI's endpoints.
 4. Basic Setup in LM Studio
-   1. Install the main model for chat completions, LM Studio's Llama-3 8B parameter model with 4 Bit quantization, [Meta-Llama-3-8B-Instruct-Q4_K_M.gguf](https://huggingface.co/lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF/blob/main/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf).  This is the best overall model combining speed, intelligence and size.
-   2. To use some of the optional APIs supported by the Desktop Assistant, you can also install `Meta-Llama-3-70B-Instruct-GGUF/Meta-Llama-3-70B-Instruct.IQ2_XS.gguf`, `QuantFactory/Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct.Q8_0.gguf` and `SanctumAI/Meta-Llama-3-8B-Instruct-GGUF/meta-llama-3-8b-instruct.f16.gguf` in order to compare llama3 models with different parameter counts and weight precision. 
+   1. Install the main model for chat completions, LM Studio's Llama-3 8B parameter model with 4 Bit quantization, [Meta-Llama-3-8B-Instruct-Q4_K_M.gguf](https://huggingface.co/lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF/blob/main/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf).  This is a good overall model for speed, intelligence and size.
+   2. To use some of the optional APIs supported by the Desktop Assistant, you can also install `bartowski/gemma-2-9b-it-GGUF/gemma-2-9b-it-Q6_K-Q8.gguf`, `lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf` and `akjindal53244/Llama-3.1-Storm-8B-GGUF/Llama-3.1-Storm-8B.Q8_0.gguf` in order to compare llama3 models with different parameter counts and weight precision. 
    3. Go to the "Local Server" tab on the left sidebar to install the embedding model.  The tab icon looks like a bidirectional arrow: '<->'.
    4. In the "Embedding Model Settings" pane, download the "nomic-embed-text-v1.5" embedding model.  Make sure to select the model after downloading it.  This doesn't happen automatically.
 5. Go to the Playground tab (page should say "Multi Model Session") and add the model, "Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf" make sure the model identifier is set to "lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf".  Unload and reload the model in the Playground if it has a different model identifier.
 6. Start the local server on the Playground tab
-7. From the installation directory, make sure the virtual environment is activated:
+7. From the installation directory, run the appropriate script, install.sh (for linux or Mac) or install_windows.bat for Windows (windows script needs work) 
+8. From the installation directory, make sure the virtual environment is activated:
    1. On Windows, run `venv\scripts\Activate.bat`
    2. On Linux or MacOS, run `source venv\bin\activate`
-8. Test that everything works by running unit tests:
+9. Test that everything works by running unit tests:
    1. Linux or MacOS, run: `python3 -m unittest adv_dialog_tests.py`
    2. In a Windows DOS/Powershell terminal, run: `python -m unittest adv_dialog_tests.py`
-9. Start a Jupyter server in order to run the Desktop LLM Assistant Jupyter notebook.  This is the main interface for the code.
+10. Start a Jupyter server in order to run the Desktop LLM Assistant Jupyter notebook.  This is the main interface for the code.
