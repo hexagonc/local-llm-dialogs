@@ -1,0 +1,86 @@
+[
+    {
+        "content": "You are a helpful, smart, kind, and efficient AI assistant. You always fulfill the user's requests to the best of your ability.",
+        "role": "system"
+    },
+    {
+        "content": "In the following set of instructions and examples, I will show you how to accomplish a goal by executing a sequence of shell commands on a computer.  I will give you a task to complete and you will analyze that task and break it up into a sequence of steps in the form of shell commands that I will execute on your behalf to complete that task.",
+        "role": "user"
+    },
+    {
+        "content": " understood",
+        "role": "assistant"
+    },
+    {
+        "content": " all shell commands that you want me to execute directly must be delimited by /* */",
+        "role": "user"
+    },
+    {
+        "content": " understood",
+        "role": "assistant"
+    },
+    {
+        "content": "for example, if I find the following code in your response: /*ls /Users/ml_user*/ then you can assume that I will try to run 'ls /Users/ml_user' as soon as possible within my command shell.  Upon executing that command in the shell, I will copy the standard output into my response to you.  For example, in the hypothetical case where running 'ls /Users/ml_user' in the shell returns:\n        ```\n        Desktop\n        Documents\n        Downloads\n        Google Drive\n        Library\n        Movies\n        Music\n        Pictures\n        Public\n        development\n        ```\n        then the next input from me will be:\n        ```\n        stdout:\n        Desktop\n        Documents\n        Downloads\n        Google Drive\n        Library\n        Movies\n        Music\n        Pictures\n        Public\n        development \n        ``` \n        Notice that my response will be prefixed by 'stdout:' when I am relaying to you the result of executing a shell command.  For example, in the hypothetical situation where executing a command causes an error to be piped to standard error, such as the case for: /*ls /Users/ml_user/temp*/, then my response will be prefixed by 'stderr:' like this:\n        ```\n        stderr:\n        ls: /Users/ml_user/temp: No such file or directory\n        ```\n        At this point, you can either correct the original command or you can ask me for help and we can troubleshoot the problem together.  \n        In some cases, I may ask you to do something that is impossible for you to accomplish with shell commands, in which case you can ask me for help or you can declare that the task is impossible to achieve.  Some commands may not have either stdout or stderr in which case, I \n        will simply respond with the return code, which will be something like: 'returncode: 0' in the case of success.  In the cases where the command fails but \n        there is nothing in stderr, I will simply reply with a non-zero return code, such as 'returncode: 1'.\n        ",
+        "role": "user"
+    },
+    {
+        "content": " understood",
+        "role": "assistant"
+    },
+    {
+        "content": " suppose I asked: \"is 'junk' a child directory of /Users/ml_user/development?\"  How would you respond?",
+        "role": "user"
+    },
+    {
+        "content": "Execute /*ls /Users/ml_user/development*/",
+        "role": "assistant"
+    },
+    {
+        "content": "stdout:\n        hello.txt\n        hello.json\n        dialogs\n        knowledgebase\n        ",
+        "role": "user"
+    },
+    {
+        "content": " No, 'junk' is not a child directory of /Users/ml_user/development",
+        "role": "assistant"
+    },
+    {
+        "content": "view the files in the current directory",
+        "role": "user"
+    },
+    {
+        "content": "/*ls*/",
+        "role": "assistant"
+    },
+    {
+        "content": "stdout:\n\u001b[34mapp\u001b[m\u001b[m\nbuild.gradle.kts\n\u001b[34mgradle\u001b[m\u001b[m\ngradle.properties\n\u001b[31mgradlew\u001b[m\u001b[m\ngradlew.bat\nlocal.properties\nmarkdown_script.py\nsettings.gradle.kts\n",
+        "role": "user"
+    },
+    {
+        "content": "Here are the files in the current directory",
+        "role": "assistant"
+    },
+    {
+        "content": "what is the current directory?",
+        "role": "user"
+    },
+    {
+        "content": "/*pwd*/",
+        "role": "assistant"
+    },
+    {
+        "content": "stdout:\n$HOME/development/public/local-llm-dialogs\n",
+        "role": "user"
+    },
+    {
+        "content": "The current directory is $HOME/development/public/local-llm-dialogs.",
+        "role": "assistant"
+    },
+    {
+        "content": "Write the contents of config.json and check_requirements.py to standard output.  Format the output like: {filename #1 absolute path}\\n{filename #1 contents}\\n************\\n{filename #2 absolute path}\\n{filename #2 contents}",
+        "role": "user"
+    },
+    {
+        "content": "/*echo \"$HOME/development/public/local-llm-dialogs/config.json\" && cat $HOME/development/public/local-llm-dialogs/config.json && echo \"************\" && echo \"$HOME/development/public/local-llm-dialogs/check_requirements.py\" && cat $HOME/development/public/local-llm-dialogs/check_requirements.py*/",
+        "role": "assistant"
+    }
+]

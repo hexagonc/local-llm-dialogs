@@ -1,0 +1,11 @@
+{
+	"openai-api-key": "{set this to your openai api key}",
+	"openai-api-url": "https://api.openai.com/v1",
+	"default-model-name": "lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf",
+	"default-model-api-key": "lm-studio",
+	"default-model-api-url": "http://localhost:1234/v1",
+	"default-embedding-model-name": "nomic-embed-text-v1.5-GGUF/nomic-embed-text-v1.5.Q8_0.gguf",
+	"default-embedding-model-api-key": "lm-studio",
+	"default-embedding-model-url": "http://localhost:1234/v1",
+	"pretrained-tokenizer-path": "{un-used.  need to fix bugs related to this}"
+}
