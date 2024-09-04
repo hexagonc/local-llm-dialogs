@@ -22,11 +22,10 @@ This project demonstrates how to use off-the-shelf local and remote large langua
    4. In the "Embedding Model Settings" pane, download the "nomic-embed-text-v1.5" embedding model.  Make sure to select the model after downloading it.  This doesn't happen automatically.
 5. Go to the Playground tab (page should say "Multi Model Session") and add the model, "Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf" make sure the model identifier is set to "lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf".  Unload and reload the model in the Playground if it has a different model identifier.
 6. Start the local server on the Playground tab
-7. From the installation directory, run the appropriate script, install.sh (for linux or Mac) or install_windows.bat for Windows (windows script needs work) 
-8. From the installation directory, make sure the virtual environment is activated:
+7. From the installation directory, make sure the virtual environment is activated:
    1. On Windows, run `venv\scripts\Activate.bat`
    2. On Linux or MacOS, run `source venv\bin\activate`
-9. Test that everything works by running unit tests:
+8. Test that everything works by running unit tests:
    1. Linux or MacOS, run: `python3 -m unittest adv_dialog_tests.py`
    2. In a Windows DOS/Powershell terminal, run: `python -m unittest adv_dialog_tests.py`
-10. Start a Jupyter server in order to run the Desktop LLM Assistant Jupyter notebook.  This is the main interface for the code.
+9. Start a Jupyter server in order to run the Desktop LLM Assistant Jupyter notebook, `LLMProjectDialog.ipynb`.  This is the main interface for the code and contains additional usage instructions.
