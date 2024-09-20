@@ -74,6 +74,11 @@ def get_config_str(key, default = None) -> Optional[str]:
     else:
         return default
 
+DEFAULT_MODEL_COMMAND_CONFIG = {}
+
+if "model-command-config" in CONFIG_MAP:
+    DEFAULT_MODEL_COMMAND_CONFIG = CONFIG_MAP["model-command-config"]
+
 LM_STUDIO_API_URL = "http://localhost:1234/v1"
 LM_STUDIO_API_KEY = "lm-studio"
 LLAMA_LLM_NAME = "lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf"

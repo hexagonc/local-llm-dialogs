@@ -9,7 +9,7 @@ from LLMTools import deserialize_from_file, serialize_to_file, get_short_filenam
 from typing import Optional
 from LLMTools import user_prompt_segment, assistant_prompt_segment, get_delimited_text
 from LLMPatternMatcher import LLMPatternMatcher
-from LLMTools import run_shell_command, read_text, apply_custom_delimiter, write_string_to_file, dialog_token_size, PATH_SEP
+from LLMTools import run_shell_command, read_text, apply_custom_delimiter, write_string_to_file, DEFAULT_MODEL_COMMAND_CONFIG, PATH_SEP
 
 
 DIALOG_INDEX_FILE_SHORT = "dialog_index.json"
@@ -100,14 +100,20 @@ class LLMDialogController:
 
         from LLMTools import LLAMA_LLM_NAME, LM_STUDIO_API_URL, LM_STUDIO_API_KEY
         from LLMTools import OPENAI_GPT4o, OPENAI_API_URL, OPENAI_API_KEY
-        self.model_config_map = {"llama3": ("lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf", LM_STUDIO_API_URL, LM_STUDIO_API_KEY),
-                                 "gemma2": ("bartowski/gemma-2-9b-it-GGUF/gemma-2-9b-it-Q6_K-Q8.gguf", LM_STUDIO_API_URL, LM_STUDIO_API_KEY),
-                                 "meta-llama3.1": ("lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf", LM_STUDIO_API_URL, LM_STUDIO_API_KEY),
-                                 "llama3.1-storm": ("akjindal53244/Llama-3.1-Storm-8B-GGUF/Llama-3.1-Storm-8B.Q8_0.gguf", LM_STUDIO_API_URL, LM_STUDIO_API_KEY),
-                                 "openai": (OPENAI_GPT4o, OPENAI_API_URL, OPENAI_API_KEY)
-                                 }
+
+        if len(DEFAULT_MODEL_COMMAND_CONFIG) > 0:
+            self.model_config_map = DEFAULT_MODEL_COMMAND_CONFIG
+        else:
+            self.model_config_map = {"llama3": ("lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf", LM_STUDIO_API_URL, LM_STUDIO_API_KEY),
+                                     "gemma2": ("bartowski/gemma-2-9b-it-GGUF/gemma-2-9b-it-Q6_K-Q8.gguf", LM_STUDIO_API_URL, LM_STUDIO_API_KEY),
+                                     "meta-llama3.1": ("lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf", LM_STUDIO_API_URL, LM_STUDIO_API_KEY),
+                                     "llama3.1-storm": ("akjindal53244/Llama-3.1-Storm-8B-GGUF/Llama-3.1-Storm-8B.Q8_0.gguf", LM_STUDIO_API_URL, LM_STUDIO_API_KEY),
+                                     "openai": (OPENAI_GPT4o, OPENAI_API_URL, OPENAI_API_KEY)
+                                     }
 
 
+    def set_model_command_map(self, new_map):
+        self.model_config_map = new_map
 
     def set_default_llm_name(self, user_input):
         from LLMTools import match_pattern
