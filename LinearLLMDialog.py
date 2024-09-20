@@ -47,7 +47,10 @@ class LinearLLMDialog:
     def trimDialog(self, steps):
         self.dialog_history = self.dialog_history[:-steps]
 
-    def startDialogBranchRecording(self, dialog_file, prefill_with_prior_history = None):
+    def startDialogBranchRecording(self, dialog_file, prefill_with_prior_history = None, update = None):
+        if update is None:
+            update = False
+
         if prefill_with_prior_history is None:
             prefill_with_prior_history = True
         if os.path.exists(dialog_file):

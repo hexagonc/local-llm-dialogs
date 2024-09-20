@@ -375,11 +375,15 @@ class LLMDialogController:
                 base_dialog_path = self.dialog_index_path
                 new_dialog_file = f"{base_dialog_path}{PATH_SEP}{dialog_name}"
             existed = os.path.exists(new_dialog_file)
-            self.current_dialog.startDialogBranchRecording(new_dialog_file)
-            self.dialog_is_being_edited = True
-            self.current_dialog_file = new_dialog_file
-            self.dialog_index_map.set(dialog_name, new_dialog_file)
-            self.saveIndex()
+            if self.current_dialog_file == new_dialog_file:
+                serialize_to_file(self.current_dialog.dialog_history, new_dialog_file, True)
+                self.dialog_is_being_edited = True
+            else:
+                self.current_dialog.startDialogBranchRecording(new_dialog_file)
+                self.dialog_is_being_edited = True
+                self.current_dialog_file = new_dialog_file
+                self.dialog_index_map.set(dialog_name, new_dialog_file)
+                self.saveIndex()
             if existed:
                 resp = f"Switched to dialog: {dialog_name}"
             else:
