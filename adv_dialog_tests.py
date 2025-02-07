@@ -21,7 +21,7 @@ class MyTestCase(unittest.TestCase):
         d2 = "assistant: understood"
         d3 = "user: all shell commands that you want me to execute directly must be delimited by /* */ since it will be intermingled with java code and so needs to appear like a comment in order to avoid being processed by the java compiler"
         d4 = "assistant: understood"
-        d6 = """user: for example, if I find the follow code in your response: /*ls ~*/ then you can assume that I will try to run 'ls ~' as soon as possible within my command shell.  Assume my shell has an initial working directory of '/Users/evolvedgpt/development/projects/desktop_llms/test/playground'.  Upon executing that command in the shell, I will take note of what gets written to standard output and pass that along to you.  For example, if running 'ls ~' in the shell returns:
+        d6 = f"""user: for example, if I find the following code in your response: /*ls ~*/ then you can assume that I will try to run 'ls ~' as soon as possible within my command shell.  Assume my shell has an initial working directory of '{HOME}/development/projects/desktop_llms/test/playground'.  Upon executing that command in the shell, I will take note of what gets written to standard output and pass that along to you.  For example, if running 'ls ~' in the shell returns:
 ```
 Desktop
 Documents
@@ -52,15 +52,15 @@ Notice that my response will be prefixed by 'stdout:' when I am relaying to you 
 you specify results in an error from the shell, as would be the case if you responded with /*ls ~/junk*/ then my response will be prefixed by 'stderr:' like this:
 ```
 stderr:
-ls: /Users/evolvedgpt/junk: No such file or directory
+ls: {HOME}/junk: No such file or directory
 ```
 At this point, you can either correct the original command or you can ask me for help and we can troubleshoot the problem together.  
 In some cases, I may ask you to do something that is impossible for you to accomplish with shell commands, in which case
 you can ask me for help or you can declare that the task is impossible to achieve.
 """
         d7 = "assistant: understood"
-        d8 = "user: suppose I asked: \"is 'temp' a child directory of /Users/evolvedgpt/development/projects/desktop_llms/test/playground?\"  How would you respond?"
-        d9 = "assistant: first execute /*ls /Users/evolvedgpt/development/projects/desktop_llms/test/playground*/.  Doing this should show the files in that directory"
+        d8 = f"user: suppose I asked: \"is 'temp' a child directory of {HOME}/development/projects/desktop_llms/test/playground?\"  How would you respond?"
+        d9 = f"assistant: first execute /*ls {HOME}/development/projects/desktop_llms/test/playground*/.  Doing this should show the files in that directory"
         d10 = """user:stdout:
 base_automata_path
 default_dialog.json
@@ -68,7 +68,7 @@ dialogs
 knowledgebase
 my_likes_and_dislikes.json
 """
-        d11 = "assistant: No, 'temp' is not a child directory of /Users/evolvedgpt/development/projects/desktop_llms/test/playground"
+        d11 = f"assistant: No, 'temp' is not a child directory of {HOME}/development/projects/desktop_llms/test/playground"
         dialog = LLMDialogController()
         dialog_pre_history = [d1, d2, d3, d4, d6, d7, d8, d9, d10, d11]
         history = dialog.current_dialog.dialog_history
@@ -87,7 +87,7 @@ my_likes_and_dislikes.json
         d2 = "assistant: understood"
         d3 = "user: all shell commands that you want me to execute directly must be delimited by /* */ since it will be intermingled with java code and so needs to appear like a comment in order to avoid being processed by the java compiler"
         d4 = "assistant: understood"
-        d6 = """user: for example, if I find the follow code in your response: /*ls ~*/ then you can assume that I will try to run 'ls ~' as soon as possible within my command shell.  Assume my shell has an initial working directory of '/Users/evolvedgpt/development/projects/desktop_llms/test/playground'.  Upon executing that command in the shell, I will take note of what gets written to standard output and pass that along to you.  For example, if running 'ls ~' in the shell returns:
+        d6 = f"""user: for example, if I find the follow code in your response: /*ls ~*/ then you can assume that I will try to run 'ls ~' as soon as possible within my command shell.  Assume my shell has an initial working directory of '{HOME}/development/projects/desktop_llms/test/playground'.  Upon executing that command in the shell, I will take note of what gets written to standard output and pass that along to you.  For example, if running 'ls ~' in the shell returns:
         ```
         Desktop
         Documents
@@ -118,7 +118,7 @@ my_likes_and_dislikes.json
         you specify results in an error from the shell, as would be the case if you responded with /*ls ~/junk*/ then my response will be prefixed by 'stderr:' like this:
         ```
         stderr:
-        ls: /Users/evolvedgpt/junk: No such file or directory
+        ls: {HOME}/junk: No such file or directory
         ```
         At this point, you can either correct the original command or you can ask me for help and we can troubleshoot the problem together.  
         In some cases, I may ask you to do something that is impossible for you to accomplish with shell commands, in which case
@@ -127,8 +127,8 @@ my_likes_and_dislikes.json
         there is nothing in stderr, I will simply reply with a non-zero return code, such as 'returncode: 1'.
         """
         d7 = "assistant: understood"
-        d8 = "user: suppose I asked: \"is 'temp' a child directory of /Users/evolvedgpt/development/projects/desktop_llms/test/playground?\"  How would you respond?"
-        d9 = "assistant: first execute /*ls /Users/evolvedgpt/development/projects/desktop_llms/test/playground*/.  Doing this should show the files in that directory"
+        d8 = f"user: suppose I asked: \"is 'temp' a child directory of {HOME}/development/projects/desktop_llms/test/playground?\"  How would you respond?"
+        d9 = f"assistant: first execute /*ls {HOME}/development/projects/desktop_llms/test/playground*/.  Doing this should show the files in that directory"
         d10 = """user:stdout:
         base_automata_path
         default_dialog.json
@@ -136,7 +136,7 @@ my_likes_and_dislikes.json
         knowledgebase
         my_likes_and_dislikes.json
         """
-        d11 = "assistant: No, 'temp' is not a child directory of /Users/evolvedgpt/development/projects/desktop_llms/test/playground"
+        d11 = f"assistant: No, 'temp' is not a child directory of {HOME}/development/projects/desktop_llms/test/playground"
         dialog = LLMDialogController()
         dialog_pre_history = [d1, d2, d3, d4, d6, d7, d8, d9, d10, d11]
         for user_input in dialog_pre_history:
