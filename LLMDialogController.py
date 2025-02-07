@@ -386,15 +386,11 @@ class LLMDialogController:
                 base_dialog_path = self.dialog_index_path
                 new_dialog_file = f"{base_dialog_path}{PATH_SEP}{dialog_name}"
             existed = os.path.exists(new_dialog_file)
-            if self.current_dialog_file == new_dialog_file:
-                serialize_to_file(self.current_dialog.dialog_history, new_dialog_file, True)
-                self.dialog_is_being_edited = True
-            else:
-                self.current_dialog.startDialogBranchRecording(new_dialog_file)
-                self.dialog_is_being_edited = True
-                self.current_dialog_file = new_dialog_file
-                self.dialog_index_map.set(dialog_name, new_dialog_file)
-                self.saveIndex()
+            self.current_dialog.startDialogBranchRecording(new_dialog_file)
+            self.dialog_is_being_edited = True
+            self.current_dialog_file = new_dialog_file
+            self.dialog_index_map.set(dialog_name, new_dialog_file)
+            self.saveIndex()
             if existed:
                 resp = f"Switched to dialog: {dialog_name}"
             else:
@@ -434,6 +430,14 @@ class LLMDialogController:
             return False, user_input, True
 
     def parse_shell_commands(self, assistant_response):
+        start_thinking_delimiter = "<think>"
+        stop_thinking_delimiter = "</think>"
+        start_of_thinking = assistant_response.find(start_thinking_delimiter)
+
+        if start_of_thinking == 0:
+            stop_of_thinking = assistant_response.find(stop_thinking_delimiter, 1)
+            if stop_of_thinking > 1:
+                assistant_response = assistant_response[stop_of_thinking + len(stop_thinking_delimiter):]
         self.get_raw_text_from_assistant_response(assistant_response)
         expressions = get_delimited_text(assistant_response, "/*", "*/")
         if len(expressions) > 0:
