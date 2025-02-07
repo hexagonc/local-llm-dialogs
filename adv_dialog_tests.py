@@ -1,46 +1,16 @@
 import unittest
 import os
 from LLMDialogController import LLMDialogController
-from LLMTools import read_text, apply_custom_delimiter, dialog_token_size, PATH_SEP
-
+from LLMTools import PATH_SEP
 
 HOME = "/Users/my_computer"
 class MyTestCase(unittest.TestCase):
-
-    def test_can_access_ollama_model(self):
-        from LLMTools import do_one_shot_llm_query
-
-        url = "http://localhost:11434/v1/"
-        api_key = "ollama"
-        query = "Show the code for displaying the current date and time from a bash terminal.  Surround this command using delimiters like this: /**{terminal command}**/"
-        model = "llama3.1:8b-instruct-fp16"
-        name = "model"
-        resp = do_one_shot_llm_query(query = query, url=url, api_key=api_key, llm_name=model)
-        print(resp)
-
 
     def test_can_replay_history_n_steps(self):
         initial_dialog_file = "./dialog_project_cloning_bash.json"
         dialog = LLMDialogController(initial_dialog_file = initial_dialog_file)
         resp = dialog.chat("system: replay 4")
         print(resp)
-
-    def test_can_load_gemma2_model(self):
-        dialog = LLMDialogController()
-        dialog.chat("system: use model gemma2", contWithStd=False)
-        resp = dialog.chat("what did the chicken cross the road?", contWithStd=False)
-        print(resp)
-
-    # this is optional
-    def test_can_use_high_precision_llama_model(self):
-        from LLMTools import match_pattern
-        pattern = "use model name {model_name}"
-        input = "use model llama3-precision"
-        map = match_pattern(pattern, input, llm_name="lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf")
-
-        self.assertTrue("model_name" in map)
-        self.assertEqual("llama3-precision", map["model_name"])
-        print(map)
 
 
     def test_can_create_dialog_controller(self):
@@ -235,6 +205,13 @@ my_likes_and_dislikes.json
         self.assertEqual("llama3", map["model_name"])
         print(map)
 
+    def test_new_dialog_branch_file(self):
+        base_dialog_path = "."
+        user_input = "system: import filesystem_actions.json"
+
+        dialog_controller = LLMDialogController(dialog_index_path=base_dialog_path)
+        resp = dialog_controller.chat(user_input, contWithStd=False)
+        resp = dialog_controller.chat("system: create branch programming_questions.json", contWithStd=False)
 
 
 if __name__ == '__main__':

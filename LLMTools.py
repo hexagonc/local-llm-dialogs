@@ -31,6 +31,8 @@ default_text_file_ext_list = ['.txt', '.md', '.rst', '.html', '.htm', '.xml', '.
 default_text_file_ext_set = set(default_text_file_ext_list)
 
 
+
+
 delimiter_seed = 90
 
 def seeded_uuid(seed):
@@ -49,8 +51,6 @@ DEFAULT_END_DELIMITER = f"{delimiter_id}]"
 
 
 # Config file key names
-OPENAI_API_KEY_CONFIG_KEY = "openai-api-key"
-OPENAI_API_URL_CONFIG_KEY = "openai-api-url"
 
 DEFAULT_LLM_NAME_CONFIG_KEY = "default-model-name"
 DEFAULT_LLM_API_KEY_CONFIG_KEY = "default-model-api-key"
@@ -66,18 +66,11 @@ CONFIG_FILE_NAME = "config.json"
 
 CONFIG_MAP = json.loads(read_text(CONFIG_FILE_NAME))
 
-CURRENT_DIRECTORY = os.getcwd()
-
 def get_config_str(key, default = None) -> Optional[str]:
     if key in CONFIG_MAP:
         return CONFIG_MAP[key]
     else:
         return default
-
-DEFAULT_MODEL_COMMAND_CONFIG = {}
-
-if "model-command-config" in CONFIG_MAP:
-    DEFAULT_MODEL_COMMAND_CONFIG = CONFIG_MAP["model-command-config"]
 
 LM_STUDIO_API_URL = "http://localhost:1234/v1"
 LM_STUDIO_API_KEY = "lm-studio"
@@ -92,12 +85,6 @@ DEFAULT_API_URL = get_config_str(DEFAULT_LLM_URL_CONFIG_KEY, LM_STUDIO_API_URL)
 DEFAULT_API_KEY = get_config_str(DEFAULT_LLM_API_KEY_CONFIG_KEY, LM_STUDIO_API_KEY)
 
 DEFAULT_DATA_EXTRACT_MODEL =  DEFAULT_MODEL_NAME
-
-OPENAI_API_URL = get_config_str(OPENAI_API_URL_CONFIG_KEY, "https://api.openai.com/v1")
-OPENAI_API_KEY = get_config_str(OPENAI_API_KEY_CONFIG_KEY, "")
-OPENAI_CHAT_GPT_TURBO = "gpt-3.5-turbo-instruct"
-OPENAI_GPT4 = "gpt-4-turbo"
-OPENAI_GPT4o = "gpt-4o"
 
 DEFAULT_DIALOG_TEMP = 0.7
 
@@ -436,6 +423,8 @@ def do_multi_shot_llm_query(prior_dialog_history, query, llm_name =DEFAULT_MODEL
     )
 
     response_message = completion.choices[0].message
+
+
     prior_dialog_history.append({"role": "assistant", "content": response_message.content})
     return response_message.content
 
@@ -461,7 +450,7 @@ def do_one_shot_llm_query(query, delimiter_start = DEFAULT_START_DELIMITER, deli
     return response_message.content
 
 
-def serialize_to_file(data, filename, pretty = False):
+def serialize_to_file(data, filename):
     """
     Serialize the given data (a list of dictionaries) to a JSON file.
 
@@ -471,10 +460,7 @@ def serialize_to_file(data, filename, pretty = False):
     """
     import json
     with open(filename, 'w') as f:
-        if pretty:
-            json.dump(data, f, indent=4, sort_keys=True)
-        else:
-            json.dump(data, f)
+        json.dump(data, f)
 
 def deserialize_from_file(filename):
     """

@@ -1,6 +1,6 @@
 import os.path
 
-from LLMTools import DEFAULT_API_URL, DEFAULT_API_KEY, LLAMA_LLM_NAME, LM_STUDIO_API_KEY, DEFAULT_DIALOG_TEMP
+from LLMTools import DEFAULT_API_URL, DEFAULT_API_KEY, DEFAULT_DIALOG_TEMP, DEFAULT_MODEL_NAME
 from LLMTools import merge_dialog_roles, system_prompt_segment, user_prompt_segment, assistant_prompt_segment
 from LLMTools import do_multi_shot_llm_query
 
@@ -16,9 +16,9 @@ class LinearLLMDialog:
         if model_url is None:
             model_url = DEFAULT_API_URL
         if model_name is None:
-            model_name = LLAMA_LLM_NAME
+            model_name = DEFAULT_MODEL_NAME
         if model_api_key is None:
-            model_api_key = LM_STUDIO_API_KEY
+            model_api_key = DEFAULT_API_KEY
         self.model_url = model_url
         self.model_name = model_name
         self.model_api_key = model_api_key
@@ -39,7 +39,8 @@ class LinearLLMDialog:
 
         if self.dialog_listener:
             self.dialog_listener(user_prompt_segment(user_input))
-        response = do_multi_shot_llm_query(self.dialog_history, query=user_input, url = self.model_url, api_key=self.model_api_key, llm_name=self.model_name, temperature=temp)
+        response = do_multi_shot_llm_query(self.dialog_history, query=user_input, url = self.model_url, api_key=self.model_api_key, llm_name=self.model_name, temperature=temp).strip()
+
         if self.dialog_listener:
             self.dialog_listener(assistant_prompt_segment(response))
         return response
@@ -47,10 +48,7 @@ class LinearLLMDialog:
     def trimDialog(self, steps):
         self.dialog_history = self.dialog_history[:-steps]
 
-    def startDialogBranchRecording(self, dialog_file, prefill_with_prior_history = None, update = None):
-        if update is None:
-            update = False
-
+    def startDialogBranchRecording(self, dialog_file, prefill_with_prior_history = None):
         if prefill_with_prior_history is None:
             prefill_with_prior_history = True
         if os.path.exists(dialog_file):
