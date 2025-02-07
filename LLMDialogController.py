@@ -9,8 +9,10 @@ from LLMTools import deserialize_from_file, serialize_to_file, get_short_filenam
 from typing import Optional
 from LLMTools import user_prompt_segment, assistant_prompt_segment, get_delimited_text
 from LLMPatternMatcher import LLMPatternMatcher
-from LLMTools import run_shell_command, read_text, apply_custom_delimiter, write_string_to_file, DEFAULT_MODEL_COMMAND_CONFIG, PATH_SEP
+from LLMTools import run_shell_command, read_text, apply_custom_delimiter, write_string_to_file, dialog_token_size, PATH_SEP
 
+from prompt_toolkit import PromptSession
+from prompt_toolkit.history import FileHistory
 
 DIALOG_INDEX_FILE_SHORT = "dialog_index.json"
 DEFAULT_DIALOG_FILE_SHORT = "default.json"
@@ -18,9 +20,21 @@ DEFAULT_DIALOG_FILE_SHORT = "default.json"
 SYSTEM_COMMAND_PREFIX = "system: "
 
 
+
 class LLMDialogController:
-    def __init__(self, initial_dialog_file = None, dialog_index_path = None, display_responses = None):
+    def __init__(self, initial_dialog_file = None, dialog_index_path = None, display_responses = None, prompt_history_file = None):
         self.last_shell_command = None
+        if prompt_history_file:
+            our_history = FileHistory(prompt_history_file)
+
+            # The history needs to be passed to the `PromptSession`. It can't be passed
+            # to the `prompt` call because only one history can be used during a
+            # session.
+            session = PromptSession(history=our_history)
+        else:
+            session = PromptSession()
+
+        self.session = session
 
         if dialog_index_path is None:
             dialog_index_path = os.getcwd()
@@ -98,22 +112,13 @@ class LLMDialogController:
         self.user_content_file_name = None
         self.user_contents = None
 
-        from LLMTools import LLAMA_LLM_NAME, LM_STUDIO_API_URL, LM_STUDIO_API_KEY
-        from LLMTools import OPENAI_GPT4o, OPENAI_API_URL, OPENAI_API_KEY
+        from LLMTools import CONFIG_MAP
 
-        if len(DEFAULT_MODEL_COMMAND_CONFIG) > 0:
-            self.model_config_map = DEFAULT_MODEL_COMMAND_CONFIG
-        else:
-            self.model_config_map = {"llama3": ("lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf", LM_STUDIO_API_URL, LM_STUDIO_API_KEY),
-                                     "gemma2": ("bartowski/gemma-2-9b-it-GGUF/gemma-2-9b-it-Q6_K-Q8.gguf", LM_STUDIO_API_URL, LM_STUDIO_API_KEY),
-                                     "meta-llama3.1": ("lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf", LM_STUDIO_API_URL, LM_STUDIO_API_KEY),
-                                     "llama3.1-storm": ("akjindal53244/Llama-3.1-Storm-8B-GGUF/Llama-3.1-Storm-8B.Q8_0.gguf", LM_STUDIO_API_URL, LM_STUDIO_API_KEY),
-                                     "openai": (OPENAI_GPT4o, OPENAI_API_URL, OPENAI_API_KEY)
-                                     }
+        model_config = CONFIG_MAP["model-config"]
+
+        self.model_config_map = model_config
 
 
-    def set_model_command_map(self, new_map):
-        self.model_config_map = new_map
 
     def set_default_llm_name(self, user_input):
         from LLMTools import match_pattern
@@ -259,7 +264,7 @@ class LLMDialogController:
             pattern = "pop {num_steps}"
             matcher = LLMPatternMatcher()
             o = matcher.extractFields(user_input, pattern)
-            if o is None:
+            if o is None or len(o) == 0:
                 self.displaySystemOutput("Popped previous user and assistant response.")
                 self.current_dialog.trimDialog(2)
                 self.displayContext(4)
@@ -381,15 +386,11 @@ class LLMDialogController:
                 base_dialog_path = self.dialog_index_path
                 new_dialog_file = f"{base_dialog_path}{PATH_SEP}{dialog_name}"
             existed = os.path.exists(new_dialog_file)
-            if self.current_dialog_file == new_dialog_file:
-                serialize_to_file(self.current_dialog.dialog_history, new_dialog_file, True)
-                self.dialog_is_being_edited = True
-            else:
-                self.current_dialog.startDialogBranchRecording(new_dialog_file)
-                self.dialog_is_being_edited = True
-                self.current_dialog_file = new_dialog_file
-                self.dialog_index_map.set(dialog_name, new_dialog_file)
-                self.saveIndex()
+            self.current_dialog.startDialogBranchRecording(new_dialog_file)
+            self.dialog_is_being_edited = True
+            self.current_dialog_file = new_dialog_file
+            self.dialog_index_map.set(dialog_name, new_dialog_file)
+            self.saveIndex()
             if existed:
                 resp = f"Switched to dialog: {dialog_name}"
             else:
@@ -429,6 +430,14 @@ class LLMDialogController:
             return False, user_input, True
 
     def parse_shell_commands(self, assistant_response):
+        start_thinking_delimiter = "<think>"
+        stop_thinking_delimiter = "</think>"
+        start_of_thinking = assistant_response.find(start_thinking_delimiter)
+
+        if start_of_thinking == 0:
+            stop_of_thinking = assistant_response.find(stop_thinking_delimiter, 1)
+            if stop_of_thinking > 1:
+                assistant_response = assistant_response[stop_of_thinking + len(stop_thinking_delimiter):]
         self.get_raw_text_from_assistant_response(assistant_response)
         expressions = get_delimited_text(assistant_response, "/*", "*/")
         if len(expressions) > 0:
@@ -445,12 +454,57 @@ class LLMDialogController:
         self.displayAssistantOutput(assistant)
 
     def get_user_input(self, prompt = None, input_queue:queue.Queue = None):
+        import sys
+
+        def can_use_prompt_toolkit():
+            try:
+                # Check if running in a Jupyter notebook
+                if 'ipykernel' in sys.modules:
+                    return False
+                # Check if an event loop is already running
+                import asyncio
+                asyncio.get_running_loop()
+                return False
+            except RuntimeError:
+                # No event loop is running
+                return True
+
+        def prompt_continuation(width, line_number, wrap_count):
+            """
+            The continuation: display line numbers and '->' before soft wraps.
+
+            Notice that we can return any kind of formatted text from here.
+
+            The prompt continuation doesn't have to be the same width as the prompt
+            which is displayed before the first line, but in this example we choose to
+            align them. The `width` input that we receive here represents the width of
+            the prompt.
+            """
+            align_width_prompt = False
+            soft_wrap_prompt = "-> "
+            hard_wrap_prompt = "> "
+            if wrap_count > 0:
+                prompt_width = len(soft_wrap_prompt)
+                if align_width_prompt:
+                    return " " * max(1, (width - prompt_width)) + soft_wrap_prompt
+                else:
+                    return soft_wrap_prompt
+            else:
+                if align_width_prompt:
+                    return ("> ").rjust(width)
+                else:
+                    return hard_wrap_prompt
+
         if input_queue:
             return input_queue.get()
         else:
             if prompt is None:
                 prompt = ""
-            return input(prompt)
+            if can_use_prompt_toolkit():
+                return self.session.prompt(prompt + " ", multiline=True, prompt_continuation = prompt_continuation)
+            else:
+                return input(prompt)
+
 
     def chat(self, user_input:str = None, contWithStd:bool = None, async_task = None, user_input_queue = None):
         task = None
