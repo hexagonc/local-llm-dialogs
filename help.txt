@@ -1,0 +1,19 @@
+
+Description:
+  This script launches chat_runner.py, a console-based chat client used to interact with large language models (LLMs) via a web API. It supports both local and remote models compatible with OpenAI's API endpoints. The client facilitates dialogue between a user and an LLM 'assistant', while also enabling dialogue management through a 'system' agent for issuing meta-commands. The REPL environment allows users to send commands to both the assistant and the system for interaction and management.
+
+Features:
+  - Model Switching: Easily switch between different LLMs (e.g., GPT-4, Llama 3) as configured in config.json.
+  - Dialog Management: Save and load dialog histories to/from JSON files for continuity.
+  - Command Execution: Execute shell commands proposed by the LLM, ensuring safe and controlled execution.
+  - Prompt Engineering: Modify dialog history, change agent roles, and manage system commands with ease.
+
+System Commands:
+  - switch to branch {filename}: Change the dialog branch to a specified JSON file.
+  - import branch {filename}: Import dialog history from a specified JSON file.
+  - pop: Remove the last dialog exchange.
+  - run shell command [(index)]: Execute a shell command proposed by the assistant.
+  - replay [n]: Show the last n dialog exchanges.
+  - introduce the file: {path}: Introduce a file's contents to the assistant.
+  - write assistant content to {file}: Save the assistant's proposed content to a file.
+  - use model name [model]: Switch the assistant model to another as defined in config.json.
