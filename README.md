@@ -35,7 +35,7 @@ be intelligent enough to pass the tests in `assess_default_models.sh`. (TBD)  [L
 smaller ones may be just as effective as the technology improves.  
 
 In addition, the desktop assistant also uses an embedding model to help with meta-command processing.  This is configured by the keys, "default-embedding-model-name", "default-embedding-model-api-key" and "default-embedding-model-url".
-Again, this model should be as small as necessary to run the tests `asssess_embedding_model.sh`. (documentation TBD)  A good choice here is "mxbai-embed-large" from mixbread.ai: https://ollama.com/library/mxbai-embed-large.
+Again, this model should be as small as necessary to run the tests `asssess_embedding_model.sh`. (e.g., run a command like: `python assess_embedding_models.py --models "all-minilm:latest" "mxbai-embed-large:latest" --url="http://localhost:11434/v1/" --api_key="ollama"`, more documentation TBD)  A good choice here is "mxbai-embed-large" from mixbread.ai: https://ollama.com/library/mxbai-embed-large.
 
   
 name local large language models.  Local model servers must conform to OpenAI's [completions](https://platform.openai.com/docs/api-reference/chat/create), [embedding](https://platform.openai.com/docs/api-reference/embeddings/create) and [models](https://platform.openai.com/docs/api-reference/models/list) apis.

@@ -33,17 +33,6 @@ def setup_logging(model_name):
 
     return logger
 
-
-def get_commands(command_csv) -> dict:
-    pass
-
-def get_command_test_inputs(test_inputs_csv) -> dict:
-    pass
-
-
-def assess_model(model, url, api_key, command_config_dic, command_exp_dic):
-    pass
-
 def main(models, url, api_key):
     # Your code to test the models goes here
 
