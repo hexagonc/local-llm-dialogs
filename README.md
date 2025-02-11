@@ -31,11 +31,11 @@ be used when referring to the model.  The value of each key specifies the config
 
 
 The keys "default-model-name", "default-model-api-url" and "default-model-api-key" present the configuration for an worker model that is used to assist with internal processing.  This model should be as small as possible while 
-be intelligent enough to pass the tests in `assess_default_models.sh`.  [Llama3 instruct](https://ollama.com/library/llama3:8b-instruct-q4_K_M) with 8B parameters and 4_K_M quantization works well as a worker but is over 4GB large and 
+be intelligent enough to pass the tests in `assess_default_models.sh`. (TBD)  [Llama3 instruct](https://ollama.com/library/llama3:8b-instruct-q4_K_M) with 8B parameters and 4_K_M quantization works well as a worker but is over 4GB large and 
 smaller ones may be just as effective as the technology improves.  
 
 In addition, the desktop assistant also uses an embedding model to help with meta-command processing.  This is configured by the keys, "default-embedding-model-name", "default-embedding-model-api-key" and "default-embedding-model-url".
-Again, this model should be as small as necessary to run the tests `asssess_embedding_model.sh`.  A good choice here is "mxbai-embed-large" from mixbread.ai: https://ollama.com/library/mxbai-embed-large.
+Again, this model should be as small as necessary to run the tests `asssess_embedding_model.sh`. (documentation TBD)  A good choice here is "mxbai-embed-large" from mixbread.ai: https://ollama.com/library/mxbai-embed-large.
 
   
 name local large language models.  Local model servers must conform to OpenAI's [completions](https://platform.openai.com/docs/api-reference/chat/create), [embedding](https://platform.openai.com/docs/api-reference/embeddings/create) and [models](https://platform.openai.com/docs/api-reference/models/list) apis.
