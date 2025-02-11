@@ -5,12 +5,12 @@ import queue
 from LinearLLMDialog import LinearLLMDialog
 from SpeechHashMap import SpeechHashMap
 from LLMTools import deserialize_from_file, serialize_to_file, get_short_filename, \
-    extract_files_or_folders_from_user_input, LM_STUDIO_API_URL, LM_STUDIO_API_KEY
+    extract_files_or_folders_from_user_input
 from typing import Optional
 from LLMTools import user_prompt_segment, assistant_prompt_segment, get_delimited_text
 from LLMPatternMatcher import LLMPatternMatcher
-from LLMTools import run_shell_command, read_text, apply_custom_delimiter, write_string_to_file, dialog_token_size, PATH_SEP
-
+from LLMTools import run_shell_command, apply_custom_delimiter, write_string_to_file, dialog_token_size
+from LLMChatConfig import PATH_SEP, LM_STUDIO_API_URL, LM_STUDIO_API_KEY, read_text, CONFIG_MAP
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 
@@ -111,8 +111,6 @@ class LLMDialogController:
         self.system_content_response = None
         self.user_content_file_name = None
         self.user_contents = None
-
-        from LLMTools import CONFIG_MAP
 
         model_config = CONFIG_MAP["model-config"]
 

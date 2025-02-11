@@ -1,0 +1,17 @@
+@startuml
+
+start
+:Are you using bash or DOS?;
+if (bash) then (yes)
+  :run the command 'nohup java -DPLANTUML_LIMIT_SIZE=8192 -jar plantuml-1.2024.6.jar -gui > /dev/null 2>&1 &' in the terminal;
+else (no)
+  :run the command 'start /B java -jar plantuml-1.2024.6.jar -gui';
+endif
+:Find the Java window of the PlantUML gui;
+:Now create a new file in the same directory with extension .puml;
+:save your puml code to the file;
+:Click on the filename in the PlantUML gui;
+:Find the window with the png file of the diagram that gets created;
+stop
+
+@enduml

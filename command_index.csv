@@ -1,0 +1,11 @@
+command_type, pattern_variant
+execute_command, run shell command
+execute_command, evaluate shell command
+change_models, use model {name}
+replay, replay {number}
+pop, pop {num_steps}
+pop, pop
+import_branch, use {file_name}
+import_branch, import {file_name}
+create_branch, switch to branch {file_name}
+create_branch, create branch {file_name}
