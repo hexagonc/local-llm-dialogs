@@ -3,9 +3,8 @@ import numpy as np
 import os
 import datetime
 import requests
-
+import csv
 from openai import OpenAI
-
 import platform
 
 from transformers import PreTrainedTokenizerFast, PreTrainedTokenizer
@@ -394,3 +393,63 @@ def deserialize_from_file(filename):
     with open(filename, 'r') as f:
         data = json.load(f)
         return data
+
+def get_numerated_list_prompt(options:list[str],include_header_footer = None, quote_items = None) ->str:
+
+    if quote_items is None:
+        quote_items = False
+    if include_header_footer is None:
+        include_header_footer = True
+    if include_header_footer:
+        out = "---------------\n"
+    else:
+        out = ""
+    for i, option_desc in enumerate(options):
+        if quote_items:
+            options = f"({i+1}) \"{option_desc}\"\n"
+        else:
+            options = f"({i+1}) {option_desc}\n"
+        out += options
+    if include_header_footer:
+        out += "---------------\n"
+    return out
+
+
+
+def parse_dict_from_csv(csv_file:str) -> dict:
+    data = csv.reader(open(csv_file))
+    command_specs = list(data)[1:]
+    out = {}
+
+    for command_type, com_variant in command_specs:
+        if command_type in out:
+            out[command_type].append(com_variant)
+        else:
+            out[command_type] = [com_variant.strip()]
+    return out
+
+
+def parse_command_map(command_map_file:str) -> dict:
+    return parse_dict_from_csv(command_map_file)
+
+def parse_test_input_map(test_input_csv_file:str) -> dict:
+    return parse_dict_from_csv(test_input_csv_file)
+
+
+def get_embedding_centroid(vect_list:list[np.ndarray]):
+    return np.array(vect_list).mean(axis = 0)
+def get_command_embedding_map(command_map:dict[str, list[str]], model, url, api_key) -> dict:
+    out = {}
+    for command_type_key, command_variants in command_map.items():
+        embeddings = [get_embedding(variant, model, url, api_key) for variant in command_variants]
+        variant_centroid = get_embedding_centroid(embeddings)
+        out[command_type_key] = variant_centroid
+
+    return out
+
+def get_input_variant_embedding_map(test_eg_map:dict[str, list[str]], model, url, api_key) -> dict[str, list[np.ndarray]]:
+    out = {}
+
+    for (command_type, input_variants) in test_eg_map.items():
+        out[command_type] = [get_embedding(variant, model, url, api_key) for variant in input_variants]
+    return out

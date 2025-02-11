@@ -1,0 +1,29 @@
+command, test_input
+execute_command,Please run the shell command to list files.
+execute_command,Can you evaluate this shell command for me?
+execute_command,Execute the shell command to check disk space.
+execute_command,Run a shell command to update the system.
+execute_command,Evaluate the shell command to show network status.
+change_models,Switch to the new model name.
+change_models,Use the model openai
+change_models,Change to model openai
+change_models,Select the model openai
+change_models,Apply the model name openai
+replay,Replay the last 3 actions.
+replay,Can you replay step 5?
+replay,Replay the sequence from step 2.
+replay,Please replay the previous command.
+replay,Replay the last action taken.
+pop,Pop the last 2 steps from the stack.
+pop,Remove the last step using pop.
+pop,Pop 3 steps from the history.
+pop,Use pop to undo the last action.
+pop,Pop the last command executed.
+import_branch,Import the branch from /home/me/dialogs/today.json
+import_branch,Use the branch /home/me/dialogs/today.json
+import_branch,Bring in the dialog from /home/me/dialogs/today.json
+import_branch,Import today.json
+import_branch,Use the branch today.json
+create_branch,Create a new branch with name today.json
+create_branch,Switch to branch today.json
+create_branch,Create branch /home/me/dialogs/today.json

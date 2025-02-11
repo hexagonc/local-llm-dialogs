@@ -5,6 +5,7 @@ import os
 import csv
 import numpy
 
+from ModelAssessor import ModelAssessor
 
 
 def setup_logging(model_name):
@@ -47,18 +48,16 @@ def main(models, url, api_key):
     # Your code to test the models goes here
 
 
-    for model in models:
-        logger = setup_logging(model)
-        logger.info(f"Starting assessment for model: {model}")
-        logger.debug(f"Using URL: {url}")
-        logger.debug(f"Using API Key: {api_key}")
+    for model_name in models:
+        logger = setup_logging(model_name)
+        min_pass_fraction = 1
+        assessor = ModelAssessor(model_name, url, api_key, min_pass_fraction)
+        results = assessor.assessEmbeddingModel()
 
-        # Simulate some operations
-        try:
-            # Your model assessment logic here
-            logger.info(f"Successfully assessed model: {model}")
-        except Exception as e:
-            logger.error(f"Error assessing model {model}: {e}")
+        report_message = f"Assessment for model [{model_name}]: {results}"
+        logger.info(report_message)
+        print(report_message)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Assess embedding models.")
