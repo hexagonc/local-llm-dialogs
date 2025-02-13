@@ -9,21 +9,21 @@ user: Display the current date and time from the terminal using the format: "{Mo
 	assistant: The response doesn't contain a shell script delimited by /* */ characters
 	assistant: There was some issue determining the correct shell script or there are multiple shell commands delimited by /* */
 user: system: run shell command
-	assistant:* The date and time are provided
+	assistant:* A command executed successfully
 	assistant: There was some error getting the date and time
 user: List the files in the current directory
 	assistant:* Provides a shell command to list the files in the current directory delimited by /* */ characters
 	assistant: Provides a shell command to list the filess in the current directory but command is not delimited by /* */
 	assistant: Indicates there is some error or misunderstanding and doesn't include a script to list the files in the directory
 user: system: run shell command
-	assistant:* Provides a list of files in a directory
+	assistant:* A command executed successfully
 	assistant: indicates there was some error or misunderstanding and the task cannot be completed
 user: Now read the contents of the file, setting_up_plantuml.puml
 	assistant:* returns a shell command to cat the contents of setting_up_plantuml.puml delimited by /* */  characters
 	assistant: returns a shell command to cat the contents of setting_up_plantuml.puml but not delimited by /* */ characters
 	assistant: indicates there is some error or additional information required to accomplish the task
 user: system: run shell command
-	assistant:* provides a summary of the contents of a file
+	assistant:* A command executed successfully
 	assistant: returns some error indicating the file doesn't exist
 	assistant: returns some other error indicating the task could not be completed
 user: Using the instructions you find in this file, execute the command to start the Plantuml java UI for bash.
@@ -31,5 +31,5 @@ user: Using the instructions you find in this file, execute the command to start
 	assistant: Output includes a shell command to start a java process but the command is not delimited by /* */
 	assistant: indicates there was some error or misunderstanding and the assistant cannot compute the task
 user: system: run shell command
-	assistant:* indicates that the command executed successfully
+	assistant:* A command executed successfully
 	assistant: indicates there was some error in the response and the task cannot be completed

@@ -87,10 +87,11 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(len(lines) == 35)
 
     def test_can_drive_dialog_from_dialog_pattern_file(self):
-        auditor_model_name = "llama3"
+        auditor_model_name = "openai"
+        deverbose_model = "deepseek-small"
 
         from AuditorController import AuditorController
-        auditor = AuditorController(auditor_model_name)
+        auditor = AuditorController(deverbose_model, auditor_model_name, deverbose_output = True)
 
         dialog_pattern_context_file = "starting_uml_dialog_pattern_context.txt"
         dialog_pattern_spec = parse_roles_from_dialog_pattern_file(dialog_pattern_context_file)
