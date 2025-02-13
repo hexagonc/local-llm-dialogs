@@ -455,3 +455,41 @@ def get_input_variant_embedding_map(test_eg_map:dict[str, list[str]], model, url
     return out
 
 
+def split_role_message(input):
+    import re
+    pattern = r"\s*((([\w, \d, _]+)\:+)\**)(.*)"
+    match = re.search(pattern, input)
+    role = None
+    message = input
+    if match:
+        role = match.group(1)
+        message = match.group(4).strip()
+        if not message:
+            message = None
+
+    return (role, message)
+
+
+def parse_roles_from_dialog_pattern_file(dialog_pattern_context_file):
+    # dialog consists of a list of tuples, (base_role:str, message:list[(bool, str)])
+    dialog = []
+    previous_role = None
+    with open(dialog_pattern_context_file, "r") as w:
+        for line in w:
+            role, message = split_role_message(line.strip())
+            if role:
+                base_role = role.strip("*")
+                is_preferred = len(role) > len(base_role)
+                if previous_role is None:
+                    dialog.append((base_role, [(is_preferred, message)]))
+                elif previous_role == base_role:
+                    all_role_messages = dialog[-1][1]
+                    all_role_messages.append((is_preferred, message))
+                else:
+                    dialog.append((base_role, [(is_preferred, message)]))
+                previous_role = base_role
+            else:
+                all_role_messages = dialog[-1][1]
+                message_pref, message_being_updated = all_role_messages[-1]
+                all_role_messages[-1] = (message_pref, message_being_updated + "\n" + message)
+    return dialog

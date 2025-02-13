@@ -4,54 +4,20 @@ import csv
 import numpy
 
 from LLMDialogController import LLMDialogController
+from LLMTools import split_role_message, parse_roles_from_dialog_pattern_file
 from SupervisorAgent import SupervisorAgent
 
 
-def split_role_message(input):
-    import re
-    pattern = r"\s*((([\w, \d, _]+)\:+)\**)(.*)"
-    match = re.search(pattern, input)
-    role = None
-    message = input
-    if match:
-        role = match.group(1)
-        message = match.group(4).strip()
-        if not message:
-            message = None
 
-    return (role, message)
 
-def parse_roles_from_dialog_pattern_file(dialog_pattern_context_file):
-    # dialog consists of a list of tuples, (base_role:str, message:list[(bool, str)])
-    dialog = []
-    previous_role = None
-    with open(dialog_pattern_context_file, "r") as w:
-        for line in w:
-            role, message = split_role_message(line.strip())
-            if role:
-                base_role = role.strip("*")
-                is_preferred = len(role) > len(base_role)
-                if previous_role is None:
-                    dialog.append((base_role, [(is_preferred, message)]))
-                elif previous_role == base_role:
-                    all_role_messages = dialog[-1][1]
-                    all_role_messages.append((is_preferred, message))
-                else:
-                    dialog.append((base_role, [(is_preferred, message)]))
-                previous_role = base_role
-            else:
-                all_role_messages = dialog[-1][1]
-                message_pref, message_being_updated = all_role_messages[-1]
-                all_role_messages[-1] = (message_pref, message_being_updated + "\n" + message)
-    return dialog
+
 
 class MyTestCase(unittest.TestCase):
     def setUp(self):
         print("Starting tests\n\n*******")
 
     def test_can_create_supervisor_agent(self):
-        auditor_model_name = "llama3"
-        supervisor = SupervisorAgent(auditor_model_name)
+        supervisor = SupervisorAgent()
 
     def test_can_extract_role_message_from_line(self):
         lines = [("user: system: import dialog_filesystem_actions_bash.json", "user:", "system: import dialog_filesystem_actions_bash.json"),
@@ -87,11 +53,11 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(len(lines) == 35)
 
     def test_can_drive_dialog_from_dialog_pattern_file(self):
-        auditor_model_name = "openai"
-        deverbose_model = "deepseek-small"
+        auditor_model_name = "deepseek-small"
+        deverbose_model = "llama3"
 
         from AuditorController import AuditorController
-        auditor = AuditorController(deverbose_model, auditor_model_name, deverbose_output = True)
+        auditor = AuditorController(auditor_model_name, deverbose_model, deverbose_output = True)
 
         dialog_pattern_context_file = "starting_uml_dialog_pattern_context.txt"
         dialog_pattern_spec = parse_roles_from_dialog_pattern_file(dialog_pattern_context_file)
@@ -126,12 +92,17 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(success)
 
     def test_can_load_dialog_pattern(self):
+        auditor_model_name = "deepseek-small"
+        deverbose_model = "llama3"
+
+        from AuditorController import AuditorController
+        auditor = AuditorController(auditor_model_name, deverbose_model, deverbose_output = True)
+
         base_dialog_controller = LLMDialogController()
 
-        auditor_model_name = "llama3"
         dialog_pattern_context_file = "starting_uml_dialog_pattern_context.txt"
 
-        supervisor = SupervisorAgent(auditor_model_name)
+        supervisor = SupervisorAgent(auditor)
         success = supervisor.initializeDialog(dialog_pattern_context_file, base_dialog_controller)
         self.assertTrue(success)
 
