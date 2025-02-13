@@ -453,3 +453,5 @@ def get_input_variant_embedding_map(test_eg_map:dict[str, list[str]], model, url
     for (command_type, input_variants) in test_eg_map.items():
         out[command_type] = [get_embedding(variant, model, url, api_key) for variant in input_variants]
     return out
+
+

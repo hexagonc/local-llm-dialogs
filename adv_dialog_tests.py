@@ -1,7 +1,8 @@
 import unittest
 import os
+
+from LLMChatConfig import PATH_SEP
 from LLMDialogController import LLMDialogController
-from LLMTools import PATH_SEP
 
 HOME = "/Users/my_computer"
 class MyTestCase(unittest.TestCase):
