@@ -160,8 +160,6 @@ The input sentence expresses success, matching option (1).
 
         self.assertTrue(all([ _[0] in test_eg_map and _[1] == len(test_eg_map[_[0]]) for _ in expected_keys]))
 
-
-
         embedding_map = get_input_variant_embedding_map(test_eg_map, model_name, url, api_key)
 
         self.assertTrue(len(embedding_map) > 0)

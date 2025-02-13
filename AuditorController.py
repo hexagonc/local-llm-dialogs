@@ -5,15 +5,16 @@ from LinearLLMDialog import LinearLLMDialog
 from LLMTools import get_numerated_list_prompt
 
 class AuditorController:
-    def __init__(self, auditor_model, deverbose_model = None):
+    def __init__(self, auditor_model, deverbose_model = None, deverbose_output = None):
         self.auditor_model = auditor_model
         model_config = CONFIG_MAP["model-config"]
         model_name, url, api_key = model_config[auditor_model]
-
+        self.deverbose_output = deverbose_output
         instructions = """
         You are a small but important component within a larger subsystem.  Your output will only be consumed by other computers so only respond with a single number according to the following convention:
-        I will present to you a list of N options that will be numbered from 1 to N.  I will then ask you a question and you should respond only with the number
-        corresponding to the option that most accurately answers the question given.
+        I will present to you a list of N options that will be numbered from 1 to N.  I will then provide a sentence and you should respond only with the number
+        corresponding to the option that most accurately matches that sentence in sentiment and meaning.  There may not be an exact match but you must return the option that is most similar.  Only return 
+        0 if there is truly no good answer and the only response would be a random guess.
         """
         self.auditor_sys_prompt = instructions
         self.auditor = LinearLLMDialog(prior_system_instructions=[instructions.strip()], model_name = model_name, model_url=url, model_api_key=api_key)
@@ -41,6 +42,9 @@ Now consider the following list of sentences:
 Return the number of the option that most closely matches the sentiment or is most similar in meaning to the input sentence.  Return 0 if none of them match.
 """
         response = self.auditor.chat(question, 0.0)
+
+        if self.deverbose_output:
+            response = self.deverbose(response)
         response_index = int(response)
         if response_index == 0:
             return ""

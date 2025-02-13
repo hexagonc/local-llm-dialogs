@@ -1,0 +1,13 @@
+user: system: import dialog_filesystem_actions_bash.json
+	system:* confirms that the correct file is being used
+	system: indicates an error executing the command
+user: system: use model openai
+	system:* confirms that the model was changed
+	system: indicates an error occurred changing the model
+user: Display the current date and time from the terminal using the format: "{Month} {day of month}, {year} {hour of day in 24 hour scale}:{minutes in hour}"
+	assistant:* Provides a single shell script for displaying the information delimited by /* */ characters
+	assistant: The response doesn't contain a shell script delimited by /* */ characters
+	assistant: There was some issue determining the correct shell script or there are multiple shell commands delimited by /* */
+user: system: run shell command
+	assistant:* A command executed successfully
+	assistant: There was some error getting the date and time
