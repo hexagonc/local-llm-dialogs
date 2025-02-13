@@ -1,3 +1,4 @@
+import random
 import unittest
 import csv
 import numpy
@@ -85,12 +86,49 @@ class MyTestCase(unittest.TestCase):
 
         self.assertTrue(len(lines) == 35)
 
+    def test_can_drive_dialog_from_dialog_pattern_file(self):
+        auditor_model_name = "llama3"
+
+        from AuditorController import AuditorController
+        auditor = AuditorController(auditor_model_name)
+
+        dialog_pattern_context_file = "starting_uml_dialog_pattern_context.txt"
+        dialog_pattern_spec = parse_roles_from_dialog_pattern_file(dialog_pattern_context_file)
+
+        dialog_controller = LLMDialogController()
+        # The dialog_pattern_spec is a list of role/input pairs
+
+        input_roles = {"user:"}
+
+        response = None
+
+        success = True
+        for base_role, messages in dialog_pattern_spec:
+            if base_role in input_roles:
+                is_preferred, selected_message = random.choice(messages)
+                response = dialog_controller.chat(user_input=selected_message, contWithStd=False)
+            elif response:
+                preferred_response = set()
+                response_sentiments = []
+                for (preferred_sentiment, sentiment) in messages:
+                    response_sentiments.append(sentiment)
+                    if preferred_sentiment:
+                        preferred_response.add(sentiment)
+                if len(response_sentiments) > 1:
+                    best_sentiment = auditor.getClosestSentiment(response, response_sentiments)
+                    if best_sentiment in preferred_response:
+                        continue
+                    else:
+                        success = False
+                        break
+        print(f"Succeeded in running dialog pattern: {success}")
+        self.assertTrue(success)
+
     def test_can_load_dialog_pattern(self):
         base_dialog_controller = LLMDialogController()
 
         auditor_model_name = "llama3"
         dialog_pattern_context_file = "starting_uml_dialog_pattern_context.txt"
-
 
         supervisor = SupervisorAgent(auditor_model_name)
         success = supervisor.initializeDialog(dialog_pattern_context_file, base_dialog_controller)
