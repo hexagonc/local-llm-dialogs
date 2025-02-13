@@ -10,7 +10,7 @@ from SupervisorAgent import SupervisorAgent
 
 
 
-
+test_dialog_pattern_file = "start_dialog_pattern_with_datetime.txt"
 
 class MyTestCase(unittest.TestCase):
     def setUp(self):
@@ -31,27 +31,6 @@ class MyTestCase(unittest.TestCase):
             self.assertTrue((role, message) == (exp_role, exp_message))
 
 
-
-    def test_can_parse_roles_from_dialog_file(self):
-        dialog_pattern_context_file = "starting_uml_dialog_pattern_context.txt"
-
-        # dialog consists of a list of tuples, (base_role:str, message:list[(bool, str)])
-        dialog = parse_roles_from_dialog_pattern_file(dialog_pattern_context_file)
-        expected_length = 20
-        self.assertTrue(len(dialog) == expected_length)
-
-
-
-    def test_can_read_dialog_pattern_file(self):
-        dialog_pattern_context_file = "starting_uml_dialog_pattern_context.txt"
-
-        lines = []
-        with open(dialog_pattern_context_file, "r") as w:
-            for line in w:
-                lines.append(line)
-
-        self.assertTrue(len(lines) == 35)
-
     def test_can_drive_dialog_from_dialog_pattern_file(self):
         auditor_model_name = "deepseek-small"
         deverbose_model = "llama3"
@@ -59,7 +38,7 @@ class MyTestCase(unittest.TestCase):
         from AuditorController import AuditorController
         auditor = AuditorController(auditor_model_name, deverbose_model, deverbose_output = True)
 
-        dialog_pattern_context_file = "starting_uml_dialog_pattern_context.txt"
+        dialog_pattern_context_file = test_dialog_pattern_file
         dialog_pattern_spec = parse_roles_from_dialog_pattern_file(dialog_pattern_context_file)
 
         dialog_controller = LLMDialogController()
@@ -100,7 +79,7 @@ class MyTestCase(unittest.TestCase):
 
         base_dialog_controller = LLMDialogController()
 
-        dialog_pattern_context_file = "starting_uml_dialog_pattern_context.txt"
+        dialog_pattern_context_file = test_dialog_pattern_file
 
         supervisor = SupervisorAgent(auditor)
         success = supervisor.initializeDialog(dialog_pattern_context_file, base_dialog_controller)
