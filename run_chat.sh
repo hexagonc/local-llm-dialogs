@@ -23,12 +23,12 @@ elif [[ "$1" == "--dialog-pattern-file" && -n "$2" ]]; then
 fi
 
 # Check for --debug flag
-if [[ "$1" == "--debug" || "$2" == "--debug" || "$3" == "--debug" ]]; then
+if [[ "$1" == "--debug" || "$2" == "--debug" || "$3" == "--debug" || "$4" == "--debug" ]]; then
     CMD="$CMD --debug"
 fi
 
 # Check for --verbose flag
-if [[ "$1" == "--verbose" || "$2" == "--verbose" || "$3" == "--verbose" ]]; then
+if [[ "$1" == "--verbose" || "$2" == "--verbose" || "$3" == "--verbose" || "$4" == "--verbose" ]]; then
     CMD="$CMD --verbose"
 fi
 

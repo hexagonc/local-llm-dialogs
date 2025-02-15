@@ -7,18 +7,18 @@ from datetime import datetime
 DESKTOP_LOG_NAME = "DESKTOP-ASSISTANT"
 
 
-def setup_logging(model_name, debug=False, verbose=False):
+def setup_logging(logger_base_name, debug=False, verbose=False):
     now = datetime.now()
     formatted = now.strftime("%Y_%m_%d__%H_%M_%S")
 
     # Create a logger for each model
-    logger = logging.getLogger(model_name)
+    logger = logging.getLogger(logger_base_name)
 
     # Set the logger level based on the debug flag
     logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
     # Create a file handler that logs debug and higher level messages
-    log_filename = f"supervisor_results_{model_name}_{formatted}.txt"
+    log_filename = f"supervisor_results_{logger_base_name}_{formatted}.txt"
     file_handler = logging.FileHandler(log_filename)
     file_handler.setLevel(logging.DEBUG if debug else logging.INFO)
 
@@ -47,7 +47,7 @@ def main(dialog_pattern_file=None, debug=False, verbose=False):
 
     # Pass the debug and verbose flags to setup_logging
     if debug:
-        logger = setup_logging("deepseek-small", debug=debug, verbose=verbose)
+        logger = setup_logging(DESKTOP_LOG_NAME, debug=debug, verbose=verbose)
     else:
         logger = None
 
@@ -98,6 +98,7 @@ if __name__ == "__main__":
     dialog_pattern_file = args.dialog_pattern_file
     debug = args.debug
     verbose = args.verbose
+
     main(dialog_pattern_file, debug=debug, verbose=verbose)
 
 
