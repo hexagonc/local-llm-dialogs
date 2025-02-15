@@ -8,7 +8,7 @@ DESKTOP_LOG_NAME = "DESKTOP-ASSISTANT"
 
 def setup_logging(model_name):
     now = datetime.now()
-    formatted = now.strftime("%Y_%m_%d_%S")
+    formatted = now.strftime("%Y_%m_%d__%H_%M_%S")
 
     # Create a logger for each model
     logger = logging.getLogger(model_name)
