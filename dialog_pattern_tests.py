@@ -10,7 +10,7 @@ from SupervisorAgent import SupervisorAgent
 
 
 
-test_dialog_pattern_file = "start_dialog_pattern_with_datetime.txt"
+test_dialog_pattern_file = "tableau_dialog_model_tests.txt"
 
 class MyTestCase(unittest.TestCase):
     def setUp(self):
