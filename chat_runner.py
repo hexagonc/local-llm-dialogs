@@ -6,39 +6,52 @@ from datetime import datetime
 
 DESKTOP_LOG_NAME = "DESKTOP-ASSISTANT"
 
-def setup_logging(model_name):
+
+def setup_logging(logger_base_name, debug=False, verbose=False):
     now = datetime.now()
     formatted = now.strftime("%Y_%m_%d__%H_%M_%S")
 
     # Create a logger for each model
-    logger = logging.getLogger(model_name)
-    logger.setLevel(logging.DEBUG)
+    logger = logging.getLogger(logger_base_name)
+
+    # Set the logger level based on the debug flag
+    logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
     # Create a file handler that logs debug and higher level messages
-    log_filename = f"supervisor_results_{formatted}.txt"
+    log_filename = f"supervisor_results_{logger_base_name}_{formatted}.txt"
     file_handler = logging.FileHandler(log_filename)
-    file_handler.setLevel(logging.DEBUG)
+    file_handler.setLevel(logging.DEBUG if debug else logging.INFO)
 
     # Create a console handler for output to the console (optional)
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
+    if verbose:
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.INFO)
 
     # Create a formatter and set it for both handlers
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(formatter)
-    console_handler.setFormatter(formatter)
+    if verbose:
+        console_handler.setFormatter(formatter)
 
     # Add the handlers to the logger
     logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
+    if verbose:
+        logger.addHandler(console_handler)
 
     return logger
 
-def main(dialog_pattern_file = None):
+
+def main(dialog_pattern_file=None, debug=False, verbose=False):
     base_dialog_path = "."
     dialog_controller = LLMDialogController.LLMDialogController(dialog_index_path=base_dialog_path)
-    logger = setup_logging(DESKTOP_LOG_NAME)
-    supervisor = SupervisorAgent(logger = logger)
+
+    # Pass the debug and verbose flags to setup_logging
+    if debug:
+        logger = setup_logging(DESKTOP_LOG_NAME, debug=debug, verbose=verbose)
+    else:
+        logger = None
+
+    supervisor = SupervisorAgent(logger=logger)
     if dialog_pattern_file:
         print(f"Attempting to initialize dialog with pattern file: {dialog_pattern_file}\n\n*********************\n")
         successful_initialization = supervisor.initializeDialog(dialog_pattern_file, dialog_controller)
@@ -65,13 +78,28 @@ if __name__ == "__main__":
         help='Path to the dialog pattern file'
     )
 
+    # Add optional --debug and --verbose flags
+    parser.add_argument(
+        '--debug',
+        action='store_true',
+        help='Enable debug mode for more detailed logging'
+    )
+
+    parser.add_argument(
+        '--verbose',
+        action='store_true',
+        help='Enable verbose mode for console output'
+    )
 
     # Parse the arguments
     args = parser.parse_args()
 
-    # Access the dialog pattern file path
+    # Access the dialog pattern file path and debug/verbose flags
     dialog_pattern_file = args.dialog_pattern_file
-    main(dialog_pattern_file)
+    debug = args.debug
+    verbose = args.verbose
+
+    main(dialog_pattern_file, debug=debug, verbose=verbose)
 
 
 
