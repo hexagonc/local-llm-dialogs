@@ -1,5 +1,3 @@
-import Environment
-import Value
 
 # function_lambda this is a lambda function that takes the function template itself
 # and the evaluation environment as arguments. The function should return a Value object.

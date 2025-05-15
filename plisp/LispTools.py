@@ -1,9 +1,8 @@
-from Value import Value, ListValue
-from Value import IntValue, StringValue, FloatValue
-from Environment import Environment
-from SimpleFunctionTemplate import SimpleFunctionTemplate
-from HashtableValue import StringHashtableValue, IntHashtableValue
-from plisp.Parser import NULL_VALUE
+from .Value import Value, ListValue, NULL_VALUE, IntValue, StringValue, FloatValue
+from .Environment import Environment
+from .SimpleFunctionTemplate import SimpleFunctionTemplate
+from .HashtableValue import StringHashtableValue, IntHashtableValue
+
 
 
 class LispTools:

@@ -1,6 +1,6 @@
-from Parser import parse, NULL_VALUE, NULL_LITERAL
-from Value import Value, ValueType, IntValue, ListValue, StringValue, FloatValue, NullValue
-from FunctionTemplate import FunctionTemplate
+from .Parser import parse
+from .Value import NULL_VALUE, NULL_LITERAL
+from .FunctionTemplate import FunctionTemplate
 
 
 class Environment:

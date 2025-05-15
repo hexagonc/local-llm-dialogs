@@ -1,9 +1,5 @@
 
-from Value import Value, ValueType, StringValue, ListValue
-from Value import Value, ValueType, ListValue, IntValue
-from Environment import Environment
-from plisp.Parser import NULL_VALUE
-
+from .Value import StringValue, Value, ValueType, ListValue, IntValue, NULL_VALUE
 
 class HashtableValue(Value):
     def __init__(self, value_type):

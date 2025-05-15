@@ -1,4 +1,5 @@
-import Environment
+
+
 
 class ValueType:
     STRING = 0
@@ -213,10 +214,12 @@ class StringValue(Value):
         if self.is_symbol():
             res = env.get_value(self.value)
             if res is None:
-                return Environment.Environment.NULL_VALUE
+                return NULL_VALUE
             else:
                 return res
         return self
+
+NULL_LITERAL = "F"
 
 class NullValue(Value):
     def __init__(self):
@@ -226,10 +229,13 @@ class NullValue(Value):
         return True
 
     def serialize(self):
-        return Environment.Environment.NULL_LITERAL
+        return NULL_LITERAL
 
     def is_symbol(self):
         return True
 
     def copy(self):
-        return Environment.Environment.NULL_VALUE
+        return self
+
+
+NULL_VALUE = NullValue()

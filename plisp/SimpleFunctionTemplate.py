@@ -1,4 +1,4 @@
-from FunctionTemplate import FunctionTemplate
+from .FunctionTemplate import FunctionTemplate
 
 class SimpleFunctionTemplate(FunctionTemplate):
     # function_lambda this is a lambda function that takes the function template itself
