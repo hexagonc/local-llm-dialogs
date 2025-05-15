@@ -1,0 +1,10 @@
+{
+	"topic": "top of conversation context.  No particular topic",
+	"meta-role-prefix": "top-context",
+	"simple-topic-name": "dialog_root_conversation",
+	"dialog-base-prompt": "dialog_root_conversation_common.txt",
+	"dialog-purpose": "dialog_root_conversation_purpose.txt",
+	"dialog-header": "dialog_root_conversation_header.txt",
+	"dialog-lisp-env": "dialog_root_conversation_env.lisp"
+	"dialog-heads": []
+}

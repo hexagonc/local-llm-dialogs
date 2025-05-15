@@ -1,0 +1,31 @@
+This Lisp runtime environment is very simple and only supports a small subset of the functionality of Common Lisp.  Thus, I will refer to this Lisp dialect as
+        "PLisp" for Prompt Lisp.  Prompt lisp runs in a runtime environment that is attached to a particular dialog with an LLM.
+        ### Values
+In PLisp, a 'Value' refers to any object instance that can be bound to variables and passed to functions. All Values can be evaluated, transforming them into potentially different Values. PLisp categorizes Values into basic and complex types:
+
+- **Basic Types**: Evaluate to themselves and include:
+  - **Scalar**: 64-bit integers, 64-bit doubles, strings, booleans (all values are `Truthy` except the singleton `F`) and symbols (unescaped strings).  Note that
+  PLisp does not use 'nil' for boolean False.  Instead, it uses the keyword F which is the string literal for False and the only Value that is Falsy.
+  - **Composite**: Hashtables with string or integer keys.
+
+- **Complex Types**: May not return verbatim when evaluated:
+  - **List**: Delimited by `()`. The first element determines if it's a function/macro call or returns the list itself.
+### Functions
+PLisp only supports a small subset of standard Lisp functions as described in the following table.  Using functions not in this table may cause an error.
+| Function | Purpose | Example usages |
+| --- | --- | --- |
+| (setq {variable-name} {value}) | use to assign a value {value} to {variable-name} | (setq x 12) (setq y "twelve") |
+| (concat {arg:string}+) | used to concatenate the string arg values into a single string. | (concat "y: " y) (concat "x = " (string x)) |
+| (string {arg}) | converts {arg} into a string. | (concat "x = " (string "12")) |
+| (list {arg}*) | constructs a list from the arguments passed into the function | (list 1 23 45) |
+| (nth {base-list} {index}) | returns the item in position {index} of the list. An exception is thrown if {index} is invalid. | (setq items (list "yes" "no" "maybe")) (nth items 0) -> "yes" |
+| (set-nth {base-list} {index} {value}) | destructively updates the value of {base-list} at index {index} to {value}. | (setq items (list "yes" "no" "maybe")) (set-nth items 0 "affirmative") -> ("affirmative" "no" "maybe") |
+| (length {composite-value}) | returns the number of elements in {composite-value}. | (length (make-int-hashtable (list (1 "one") (2 "two") (3 "three")))) -> 3 (length (list 1 3 4 5 5)) -> 5 |
+| (progn {body-exp}+) | executes each {body-exp} sequentially and returns the value of the last expression. | (progn (setq x 10) (setq y 20)) -> 20 (if (= 12 12) (progn (setq z 1) (setq x (+ x z)))) -> 11 |
+| (append-item {arg:list} {item}) | appends {item} to the end of {arg} | (setq foods ()) (setq foods (append-item foods "milk")) (setq foods (append-item foods "water")) |
+| (unbind {var-name:symbol}) | Unbinds the {var-name} in the outermost environment within scope | (setq x 10), (unbind x), {exception thrown unless x exist in a parent scope }|
+| (get-datetime-string) | Returns the current date and time in the local timezone.  Whether to show AM/PM or military time is defined by the global variable 'use_24hr' where a false value results in military time. | (setq use_24hr 1), (get-datetime-string) -> {shows datetime using 24 hours in a day}, (setq use_24hr F) (get-datetime-string) -> {shows datetime using 12 hours in a day and AM or PM}|  
+| (+ {number}+) | returns the sum of all arguments. | (+ 45) -> 45 (+ 1 3 4 5) -> 13 |
+| (- {lvalue} {rvalue}+) | returns the difference of {lvalue} minus the sum of all {rvalue}s. | (- 45) -> -45 (- 10 3) -> 7 |
+| (* {number}+) | returns the product of all arguments. | (* 45) -> 45 (* 1 3 4 5) -> 60 |
+| (/ {lvalue} {rvalue}+) | returns {lvalue} divided by the product of all {rvalue}s, or F if division by zero occurs. | (/ 10) -> 0.1 (/ 10 10) -> 1 (/ 12 0) -> F |

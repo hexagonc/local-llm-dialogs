@@ -17,7 +17,20 @@ class Environment:
         self.var_map[key] = value
         return value
 
+    def unbind_value(self, key):
+        if key in self.var_map:
+            self.var_map.pop(key)
+
     def get_value(self, key):
+        if key == NULL_LITERAL:
+            return NULL_VALUE
+        if key in self.var_map:
+            return self.var_map[key]
+        if self.parent is not None:
+            return self.parent.get_value(key)
+        raise Exception(f"variable not defined: {key}")
+
+    def has_value(self, key):
         if key == NULL_LITERAL:
             return NULL_VALUE
         if key in self.var_map:
@@ -50,4 +63,37 @@ class Environment:
         for results in parse(exp, True):
             out = self.evaluate(results)
         return out
+
+    def serialize(self):
+        item_separator = "~*.*~"
+        pair_separator = "+~.~+"
+        parent_separator = "+..+"
+        if self.parent:
+            serialized_parent = self.parent.serialize() + parent_separator
+        else:
+            serialized_parent = ""
+        inner = item_separator.join([f"{kv_pair[0]}{pair_separator}{kv_pair[1].serialize()}" for kv_pair in self.var_map.items()])
+        return serialized_parent + inner
+
+    def fromSerialized(self, serialized:str):
+        from .LispTools import add_basic_functions, add_arithmetic_functions
+        from .FileTools import add_filesystem_functions
+        item_separator = "~*.*~"
+        pair_separator = "+~.~+"
+        parent_separator = "+..+"
+
+        last = serialized.rfind(parent_separator)
+        if last >= 0:
+            parent_env = Environment()
+
+            self.parent = parent_env
+            parent_env.fromSerialized(serialized[0:last])
+            serialized = serialized[len(parent_separator):]
+        else:
+            add_basic_functions(self)
+            add_arithmetic_functions(self)
+            add_filesystem_functions(self)
+        for serialized_kv in serialized.split(item_separator):
+            key, serialized_value = serialized_kv.split(pair_separator)
+            self.map_value(key, self.evaluate_exp(serialized_value))
 

@@ -165,7 +165,7 @@ class ListValue(Value):
         return ListValue([v.copy() for v in self.values])
 
     def serialize(self):
-        return f"({', '.join([v.serialize() for v in self.values])})"
+        return f"(list {' '.join([v.serialize() for v in self.values])})"
 
     def evaluate(self, env):
         if self.size() == 0:
@@ -197,7 +197,7 @@ class StringValue(Value):
     def is_string(self):
         return True
 
-    def string(self):
+    def string(self) -> str:
         return self.value
 
     def copy(self):
@@ -212,7 +212,7 @@ class StringValue(Value):
 
     def evaluate(self, env):
         if self.is_symbol():
-            res = env.get_value(self.value)
+            res = env.has_value(self.value)
             if res is None:
                 return NULL_VALUE
             else:

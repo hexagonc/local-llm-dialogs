@@ -43,7 +43,7 @@ def dialog_token_size(dialog_file):
         total_query+=f"{role_header_map[role]}{content}"
     return get_number_of_llama3_tokens(total_query)
 
-def flatten_dialog_list(dialog_list):
+def flatten_dialog_list(dialog_list, use_separate_lines_p = False):
     total_query = ""
 
     # TODO: make these headers model-specific
@@ -55,7 +55,10 @@ def flatten_dialog_list(dialog_list):
     for seg in dialog_list:
         content = seg["content"]
         role = seg["role"]
-        total_query += f"{role_header_map[role]}{content}"
+        if use_separate_lines_p:
+            total_query += f"{role_header_map[role]}{content}\n"
+        else:
+            total_query += f"{role_header_map[role]}{content}"
     return total_query
 
 
@@ -338,6 +341,20 @@ def do_multi_shot_llm_query(prior_dialog_history, query, llm_name =DEFAULT_MODEL
 
     response_message = completion.choices[0].message
 
+    prior_dialog_history.append({"role": "assistant", "content": response_message.content})
+    return response_message.content
+
+def process_llm_history(prior_dialog_history, llm_name =DEFAULT_MODEL_NAME, verbose = False, url = DEFAULT_API_URL, api_key = DEFAULT_API_KEY, temperature = DEFAULT_COMMAND_TEMP):
+    client = OpenAI(base_url=url, api_key=api_key)
+
+    model_hugging_face_name = llm_name
+    completion = client.chat.completions.create(
+        model=model_hugging_face_name,
+        messages=prior_dialog_history,
+        temperature=temperature,
+    )
+
+    response_message = completion.choices[0].message
 
     prior_dialog_history.append({"role": "assistant", "content": response_message.content})
     return response_message.content
@@ -457,7 +474,7 @@ def get_input_variant_embedding_map(test_eg_map:dict[str, list[str]], model, url
 
 def split_role_message(input):
     import re
-    pattern = r"\s*((([\w, \d, _]+)\:+)\**)(.*)"
+    pattern = r"^\s*((([\w,\-\d]+)\:+)\**)(.*)"
     match = re.search(pattern, input)
     role = None
     message = input
@@ -470,7 +487,41 @@ def split_role_message(input):
     return (role, message)
 
 
-def parse_roles_from_dialog_pattern_file(dialog_pattern_context_file):
+def parse_roles_from_dialog_string(dialog_str:str, use_llm_input_structure_p = False):
+    dialog = []
+    previous_role = None
+
+    for line in dialog_str.split("\n"):
+        if (len(line.strip())>0):
+            role, message = split_role_message(line.strip())
+            if role:
+                base_role = role.strip("*")
+                is_preferred = len(role) > len(base_role)
+                if previous_role is None:
+                    dialog.append((base_role, [(is_preferred, message)]))
+                elif previous_role == base_role:
+                    all_role_messages = dialog[-1][1]
+                    all_role_messages.append((is_preferred, message))
+                else:
+                    if message is None:
+                        message = ""
+                    dialog.append((base_role, [(is_preferred, message)]))
+                previous_role = base_role
+            else:
+                if len(dialog)>0:
+                    all_role_messages = dialog[-1][1]
+                    message_pref, message_being_updated = all_role_messages[-1]
+                    all_role_messages[-1] = (message_pref, message_being_updated + "\n" + message)
+    if use_llm_input_structure_p:
+        def to_llm_structure(item_spec):
+            role:str = item_spec[0][0:-1]
+            message:str = item_spec[1][0][1]
+            return {"content":message, "role":role.lower()}
+
+        return [to_llm_structure(item) for item in dialog]
+    else:
+        return dialog
+def parse_roles_from_dialog_pattern_file(dialog_pattern_context_file, use_llm_input_structure_p = False):
     # dialog consists of a list of tuples, (base_role:str, message:list[(bool, str)])
     dialog = []
     previous_role = None
@@ -492,4 +543,12 @@ def parse_roles_from_dialog_pattern_file(dialog_pattern_context_file):
                 all_role_messages = dialog[-1][1]
                 message_pref, message_being_updated = all_role_messages[-1]
                 all_role_messages[-1] = (message_pref, message_being_updated + "\n" + message)
-    return dialog
+    if use_llm_input_structure_p:
+        def to_llm_structure(item_spec):
+            role:str = item_spec[0][0:-1]
+            message: str = item_spec[1][0][1]
+            return {"content": message, "role": role.lower()}
+
+        return [to_llm_structure(item) for item in dialog]
+    else:
+        return dialog

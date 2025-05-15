@@ -1,0 +1,401 @@
+Please find the function api reference for a custom programming language called JLisp that is a simplified variant of Common Lisp.   All ordinary function calls are surrounded by parenthesis and The JLisp language interpreter is written in Java.   Throughout this definition, I will often refer to objects and values interchangeably.   
+
+### Values
+In JLisp parlance, 'Value' is a synonym for object instances which can be bound to variables and passed into functions.  Any 'Value' can be 'evaluated' which is  the default data processing performed by the runtime to transform that 'Value' into a (possibly) different Value before passing it into a function or displaying it in a REPL.  Everything in JLisp is a Value but how type are handled depend on their type and any meta-data associated with them.
+#### Basic Types
+A 'basic' type is a type where all instances evaluate to themselves.  Basic types are divided into scalar and composite types:
+##### Scalar basic types:
+1. Two numeric types: a 64-bit integer type and 64-bit double-precision floating point
+2. Strings
+3. Boolean: There are no separate keywords for boolean values `True` and `False`; Instead, all values are either `Truthy` or `Falsy`.   All values are considered `Truthy` except for a special singleton value bound to the global variable, `F`, which exists in all lexical scopes by default.  However, since `F` is just an ordinary variable that happens to be pre-assigned to `F` value, developers should never reassign the variable `F`.  Any other value will be treated by conditional and boolean expressions as `True`.  For example, the expression `(and 1 8)` evaluates to the the last `Truthy` argument of the function,  `8` whereas both of the expressions  `(and F 8)` evaluates to the global Falsy value.
+4. Custom Java objects: instances of these type function as a wrapper for any arbitrary Java object.  Objects of this type are used to extend the capabilities of JLisp and support interoperability with arbitrary POJOs
+5. Lambda functions: These values store anonymous user-defined functions that wrap the lexical scope that they were defined in and can be bound to variables and passed into other functions like any other instance value.
+6. symbols: these are essentially a special type of string.  Symbols are never displayed with double-quote delimiters.  They are primarily used to distinguish strings from variables and function names in source code.
+
+##### Composite basic types
+The only composite basic types in JLisp are the hashtable types:
+1. String Hashtables: these are hastables with string keys and arbitrary values
+2. Integer Hashtables: these are hastables with integral keys and arbitrary values
+
+
+#### Complex types
+##### Complex composite types:
+The only complex composite type is the 'list' type.  Values with complex types may not be returned verbatim when evaluated:
+1. List type: These are delimited by parenthesis `()`.  Unlike most variants of Lisp, the empty list has no special meaning and, particularly,  `()` is not treated as 'Falsey' (it is, in fact, Truthy) and there is no special symbol for "nil" as there is in other Lisp variants.  Also, for JLisp, there is no concept of a "cons" cell; all objects with List type are implemented as Java ArrayLists. What is returned when a list is evaluated depends on the type of the first member of that list.  If it is a symbol then the first value will be treated as the name of a function or macro (to defined later) and an attempt will be made to evaluate the list as a call to a function or macro.  Otherwise, the list itself will be returned when it is evaluated.
+
+### Functions
+##### Evaluation rules for JLisp functions
+All JLisp functions are treated as either 'normal' functions or 'special functions'.  A function is considered an 'normal' function if the function and its arguments are evaluated using 'normal'  evaluation rules.  'Special' functions are evaluated using arbitrary rules that can be function specific.
+- normal function evaluation: 'normal' functions are called using the standard syntax, `({function name} [function arguments]?)` where `{function name}` is an unquoted symbol which is the name of the function and `[function arguments]?` are the remaining zero or more values in the list.  For normal functions, `[function arguments]` are evaluated sequentially from left to right at the point the call is made before being processed by the function, `{function name}`.  All earlier arguments are fully evaluated before later arguments.
+- special function evaluation: 'special' functions can have arbitrary rules for evaluating their arguments.  In particular, special functions are 'special' precisely because their arguments are *not* all pre-evaluated before being mapped to formal parameters.
+
+
+### Built-in Normal and Special function API reference
+The following convention will be used to document the behavior and signature of functions and macros:
+```
+signature: ({name} [positional argument spec]+ [keyword spec]+): [return type]
+purpose: {description of purpose of function}
+arity: {number} or {number+} depending on whether the function supports exactly or at least {number} arguments.
+returns: {value returned}
+examples: {examples of usage}
+```
+Not all fields need be supplied.
+- signature: this field species the signature of the function.  A function signature adheres to the following syntax:
+	- name: the name of the function or macro.  This is a symbol Value
+	- positional argument spec: `{positional argument name}[:{type description}]?`
+		- positional argument name: the name provided here is arbitrary but it helps to name it according to the purpose of the argument.
+		- type description: optional informal specification of the type of the argument.  Can use natural language terms such as: "numeric", "string or numeric", "boolean" (a Value where only its truthiness or falsiness is considered, "hashtable", "string hashtable", "CNN"
+	- keyword spec: `{keyword name}` `{keyword description}`
+		- keyword name: name of the keyword
+		- keyword description: optional additional information about the keyword such as the expected type of values passed into it as well as default values when it is not provided.  If the value of a keyword is not specified at the point of function all, then the keyword should be omitted completely.  JLisp does not support lone keywords in its actual parameters unless they are used as ordinary positional parameters
+	- return type: optional short description of the type of value returned by the function
+- purpose: optional description of the purpose of the function
+- arity: optional description of the number of arguments that can be passed into the function.  This field may not be necessary when the arity can be inferred from the "call syntax" field
+- returns: optional detailed description of the value returned, including its type.  This field can be omitted if `return type` is provided or sufficiently obvious from the "call syntax" field.
+- examples: optional list of usage examples.  Examples should specify a example call syntax with a description of the Value returned.  In this case, the symbol '->' indicates that the expression the left side evaluates to the Value described on its right
+ The field, "call syntax" is used as a high level example of the function call along with the names of all mandatory positional arguments as well as optional positional arguments.  Once a positional argument is specified as optional, all remaining positional arguments must also be optional.  "call syntax" is the only mandatory field in a function API specification.  The following list contains function API specifications for all predefined normal and special functions:
+
+#### Predefined mathematical functions
+Most of the mathematical functions in JLisp work similarly to their corresponding names in Common Lisp or otherwise in accordance with their ordinary mathematical meaning.
+
+1. +
+```
+signature: (+ {number}+ ): {sum of all arguments}
+arity: 1+
+examples: 
+(+ 45) -> 45
+(+ 1 3 4 5) -> 13
+```
+2. -
+```
+signature: (- {lvalue} {rvalue}+ ): {difference of lvalue minus the sum of all rvalues}
+arity: 1+
+purpose: If only one argument is supplied then -{lvalue} is returned.  Otherwise returns {lvalue} - sum(rvalue)
+examples: 
+(- 45) -> -45
+(- -45) -> 45
+(- 10 3) -> 7
+(- 10 1 1 1 1) -> 6
+```
+3. *
+```
+signature: (* {number}+ ): {product of all arguments}
+arity: 1+
+examples: 
+(* 45) -> 45
+(* 1 3 4 5) -> 60
+```
+4. /
+```
+signature: (/ {lvalue} {rvalue}+ ): {lvalue divided by the product of all rvalues.  Returns F if division by zero would occur}
+arity: 1+
+examples: 
+(/ 10) -> 0.1
+(/ 10 10) -> 1
+(/ 10 10 10) -> 0.1
+(/ 0 0) -> F
+(/ 12 0) -> F
+```
+
+#### Pre-defined boolean functions
+1. and
+```
+signature: (and {arg}*): {last Truthy argument or F}
+purpose: Evaluates each argument in sequence and returns the last Truthy argument if all are Truthy. If any argument is Falsy, returns F immediately.
+arity: 1+
+returns: The last Truthy argument if all are Truthy, otherwise F.
+examples:
+(and 1 2 3) -> 3
+(and 1 F 3) -> F
+(and 1) -> 1
+```
+
+2. or
+```
+signature: (or {arg}*): {first Truthy argument or F}
+purpose: Evaluates each argument in sequence until a Truthy argument is evaluated. If all arguments are Falsy, returns F.
+arity: 1+
+returns: The first Truthy argument, or F if none are Truthy.
+examples:
+(or F F 3) -> 3
+(or F 2 3) -> 2
+(or 1) -> 1
+```
+
+3. not
+```
+signature: (not {arg}): {1 or F}
+purpose: Returns 1 if the argument is Falsy, otherwise returns F.
+arity: 1
+returns: 1 if the argument is Falsy, otherwise F.
+examples:
+(not F) -> 1
+(not 0) -> F
+(not 1) -> F
+```
+
+5. print
+```
+signature: (print {message:string}+): string 
+purpose: Concatenates all {message} arguments and writes the result to standard output 
+arity: 1+
+returns: string value of all arguments joined by space character
+examples:
+(print "yes") -> "yes"
+(print "yes" "or" "no") -> "yes or no"
+```
+
+5. =
+```
+signature: (= n:Number m:Number): {m or F} 
+purpose: Performs numeric equality between numeric Values.
+arity: 2
+returns: m if m == n otherwise F
+examples:
+(= 12 12.0) -> 12.0
+(= 12.0 12) -> 12
+(= 12 1) -> F
+```
+6. equals
+```
+signature: (equals {lvalue} {rvalue}): {rvalue or F} 
+purpose: Performs logical equality between Values. Exact behavior depends on type of {lvalue} or {rvalue}.  Generally, this should be equivalent to (equals (serialize {lvalue}) (serialize {rvalue}))
+returns: {rvalue} if {lvalue} is logically equivalent to {rvalue} otherwise returns F
+examples:
+(equals 12 12.0) -> 12.0
+(equals "yes" 12) -> F
+(equals "yes" "yes") -> "yes"
+```
+
+
+
+22. progn
+```
+signature: (progn {body-exp}+) 
+purpose: Executes each {body-exp} sequentially.  If a {body-exp}'s evaluated Value is a 'continuation' then the progn function appends its own runtime meta-data to the continuation, such as the last instruction that was evaluated.  The function then returns the updated continuation.  The Lisp interpreter will propagate this continuation to the top of the call site where it began evaluating the JLisp code.  Shared memory in the interpreter, such as global bindings, can be updated with IO or other data in the external event-loop.  The Lisp interpreter than resumes evaluating the last continuation Value that was returned, which will resume execution from the point it left off, which is normally the last evaluated {body-exp}.  It reevaluates that {body-exp} and if it returns yet another continuation then the stack unrolling repeats as described above.  Otherwise, the 'progn' will evaluate the next {body-exp} in its argument list.  If the {body-exp} was the last argument then the return value of prog function will be its evaluated value.  This function is primarily used as a wrapper for a block of Lisp expressions that need to executed sequentially. 
+arity: 1+
+returns: evaluated Value of last {body-exp}
+examples: 
+(progn (setq x 10) (setq y 20)) -> 20
+x -> 10
+y -> 20
+(if (= 12 12) (progn (setq z 1) (setq x (+ x z)))) -> 11
+x -> 11
+```
+
+24. concat
+```
+signature: (concat {exp}+):String
+purpose: Concatenates all {exp} into a single string.  Any non-string {exp} are converted to string before concatenation
+arity: 1+
+examples: 
+(concat "(" 1 ")") -> "(1)"
+```
+
+33. make-string-hashtable
+```
+signature: (make-string-hashtable [key-value pair list] ): {String Hashtable}
+purpose: Creates a String Hashtable Value initialized with [key-value pair list].  [key-value pair list] is a list of {key-value pair} where {key-value pair} is a list whose first Value is a String key and second Value is arbitrary.  NLisp doesn't have a separate `set` basic type so use String hashtables with arbitrary Value to simulate a 'set' type.
+arity: 0+
+examples: 
+(setq empty-table (make-string-hashtable)) -> {empty hashtable with String keys}
+(setq word-to-value-map 
+      (make-string-hashtable (list ("first" 1) ("second" 2) ("third" 3) ("one" 1) ("two" 2) ("three" 3)))) -> {string hashtable}
+(gethash word-to-value-map "two") -> 2
+```
+34. make-int-hashtable
+```
+signature: (make-int-hashtable [key-value pair list] ): {Integer Hashtable}
+purpose: Creates a Integer Hashtable Value initialized with [key-value pair list].  [key-value pair list] is a list of {key-value pair} where {key-value pair} is a list whose first Value is a Integer (remember, this actually wraps a native 'Long' type) key and second Value is arbitrary.  NLisp doesn't have a separate `set` basic type so use Integer hashtables with arbitrary Value to simulate a 'set' type.
+arity: 0+
+examples: 
+(setq empty-table (make-int-hashtable)) -> {empty hashtable with Integer keys}
+(setq value-to-word-map 
+      (make-int-hashtable (list (1 "one") (2 "two") (3 "three")))) -> {integer hashtable}
+(gethash value-to-word-map 2) -> "two"
+```
+36. nth
+```
+signature: (nth {base-list}:list {index} ): {item in position index}
+purpose: Returns the item in position {index} of the list.  Exception will be thrown if first argument isn't a list or if {item} is an invalid index for the length of the list.
+arity: 2
+examples: 
+(setq items ("yes" "no" "maybe"))
+(nth items 0) -> "yes"
+```
+36. set-nth
+```
+signature: (set-nth {base-list} {index} {value}): {updated base-list}
+purpose: Destructively updates the value of {base-list} at index {index} to {value}
+arity: 3
+returns: {updated list}
+examples: 
+(setq items ("yes" "no" "maybe"))
+(set-nth items 0 "affirmative") -> ("affirmative" "no" "maybe")
+```
+38. length
+```
+signature: (lenth {composite-value}): {number of items in composite-value}
+purpose: Returns the number of elements in {composite-value}.  If it is a list then returns the number of elements.  If it is a hasthable value, returns the number of keys
+arity: 1
+examples: 
+(length (make-int-hashtable (list (1 "one") (2 "two") (3 "three")))) -> 3
+(length (1 3 4 5 5)) -> 5
+```
+
+
+47. defhash
+```
+signature: (defhash {hasthable} {key} {value}): {value}
+purpose: Maps {key} to {value} in {hashtable}.  Type of {key} must be compatible with the type of {hashtable}.  Note that 'F' is a valid Value that can be set to {value}.  In that case, if you want to test if {key} is in {hasthable}, use 'contains-hash-key' instead of a Falsy return value from `gethash`
+arity: 3
+return: Value mapped to {key}, {value}
+examples: 
+(setq empty-table (make-int-hashtable)) -> {empty hashtable with Integer keys}
+(defhash empty-table 0 "zero") -> "zero"
+(length empty-table) -> 1
+(setq value-to-word-map 
+      (make-int-hashtable (list (1 "one") (2 "two") (3 "three")))) -> {integer hashtable}
+(defhash value-to-word-map 0 "zero") -> "zero"
+(length value-to-word-map) -> 4
+```
+49. gethash
+```
+signature: (gethash {hasthable} {key}): {value mapped to key or F}
+purpose: Returns the value mapped to {key} or F if there is no value for this key.
+arity: 2
+examples: 
+(setq empty-table (make-int-hashtable)) -> {empty hashtable with Integer keys}
+(gethash empty-table 0) -> F
+
+(setq value-to-word-map 
+      (make-int-hashtable (list (1 "one") (2 "two") (3 "three")))) -> {integer hashtable}
+(gethash value-to-word-map 2) -> "two"
+```
+50. remhash
+```
+signature: (remhash {hastable} {key}): {hashtable with key removed}
+purpose: Returns {hashtable} with {key} removed
+```
+51. get-hash-keys
+```
+signature: (get-hash-keys {hastable}): {list of keys}
+purpose: Returns a list of the hashkeys of {hashtable}.  {hashtable} can be either a string hashtable or integer hashtable
+examples:
+(get-hash-keys (make-int-hashtable (list (1 "one") (2 "two") (3 "three")))) -> (1 2 3)
+(get-hash-keys (make-string-hashtable (list ("first" 1) ("second" 2) ("third" 3) ("one" 1) ("two" 2) ("three" 3)))) -> ("first" "second" "third" "one" "two" "three")
+```
+52. contains-hash-key
+```
+signature: (contains-hash-key {hastable} {key}): {key or F}
+purpose: Returns {key} if it is a hashkey of {hashtable} otherwise returns F
+examples:
+(contains-hash-key (make-int-hashtable (list (1 "one") (2 "two") (3 "three"))) 1) -> 1
+(contains-hash-key (make-int-hashtable (list (1 "one") (2 "two") (3 "three"))) 0) -> F
+```
+
+58. string
+```
+signature: (string {item}): {string value}
+purpose: Tries to coerce {item} to a string.  This is type specific.
+examples:
+(string 12) -> "12"
+(setq items (1 1.3 "yes" (make-string-hashtable) (make-int-hashtable ) (lambda (x y) (+ x y))))
+(mapcar m items (string m)) -> ("1" "1.3" "yes" "(make-string-hashtable)" "(make-int-hashtable)" "(lambda (x y) (+ x y))")
+```
+
+52. list
+```
+signature: (list [any Value]+): {list containing the values passed into the function}
+purpose: Use this to wrap a List Value around an arbitrary number of Values passed into the function.  Returns an empty list if no arguments are provided.  There a no restrictions on the types of Values passed in
+arity: 0+
+examples: (list 12 45) -> (12 45), (list "x" "y" "z") -> ("x" "y" "z"), (list)
+```
+
+#### Pre-defined special functions
+1. setq
+```
+signature: (setq {name}:Symbol {value} ): {value}
+purpose: Use this to bind the value {value} to {name} in the current lexical environment.  Note that this will shadow any existing variables with the same name in the current lexical scope.
+arity: 1
+returns: {value}
+examples: 
+(setq x 45) -> 45
+x->45
+(setq y F) -> F
+y -> F
+```
+
+
+3. set
+```
+signature: (set {override name}:Symbol {value} ): {value}
+purpose: Use this to bind {value} to a variable {override name} in the current lexical scope.  If there is already a variable in a parent scope with the same name as {override name} then the value of that variable will be overritten by {value}.  This is the mechanism by which global variable bindings can be overwritten by code in child scopes
+arity: 1
+returns: {value}
+examples: 
+(set x 45) -> 45
+x -> 45 ; in closest scope where x is defined or the current scope
+(set y F) -> F ; in closest scope where y is defined or the current scope
+```
+4. let
+```
+signature: (let {binding list}:{list of name-value pairs, can be empty} {expressions to evaluate}+): {value of last expression evaluated}
+purpose: Creates a new lexical scope that is a child of the scope the call was made in.  {binding list} is a list of name-value pairs where a name-value pair is a list whose first value is a symbol and the second value is a Value to bind to that name.  The variables declared in {binding list} cannot reference each other in their initialization.  Use the function 'let*' below in order to use variables declared earlier in the initialization list to initialize later ones.  Returns the value of the last expression evaluated in {expressions to evaluate}.  
+arity: 1+
+examples: 
+(setq x 12) 
+(let ((x 10) (y 10)) (setq x (+ x y)) x) -> 20
+x -> 12
+```
+
+6. if
+```
+signature: (if {condition} {consequent} [alternative]?): {value of either consequent or alternative when evaluated}
+purpose: Conventional 'if' statement that works like normal Lisp.  Evaluates {condition}. If value is Truthy then returns the value of evaluating {consequent}.  If {alternative} was provided then returns it's evaluated value, otherwise it returns F
+arity: 2+
+examples: 
+(if 12 "True" "False") -> "True"
+(if F "True" "False") -> F
+(if F "True") -> F
+```
+
+8. while
+```
+signature: (while {condition} {loop-expression}+)
+purpose: Starts by evaluating {condition}.  So long as the return value is Truthy then proceeds to evaluate each {loop-expression} argument sequentially, returning evaluate {condition} again.  This process repeats indefinitely until either {condition} evaluates to F or any of {loop-expression} or {condition} evaluate to a 'break' Value.  If a 'break' Value is evaluated then that value will be the return value of entire while function, with the 'break' flag cleared.
+arity: 2+
+returns: F if the function exited because {condition} became Falsy.  Otherwise, returns a Value that had previously been passed into a `break` or `return` function.
+examples: 
+(setq i 0) 
+(while (< i 100) (setq i (+ i 1))) -> 
+(setq i 0)
+(while 1 (setq i (+ i )) "False") -> F, (if F "True") -> F
+```
+
+
+12. for
+```
+signature: (for {loop-spec}:{list or symbol} {loop-bound-spec}:{list or integer} {return-exp} {loop-exp}): {evaluated return-exp}
+purpose: 'for' loops in JLisp operate somewhat differently than in conventional Lisp dialects.  The 'for' function defines a special child lexical scope where local variables are bound for each value to iterated over before {loop-exp} is evaluated.  {loop-spec} can be either a symbol specifying the loop bounding variable name per iteration or it can be a list of symbols where the first is the loop bounding variable name and the second is the iteration index binding variable name.  The iteration index binding variable is zero-indexed, starting from 0 to one less than the max iterations.  {loop-bound-spec} can be either a list to loop over or an integer representing the maximum number of iterations.  {return-exp} is an expression that is evaluated as the return value from the 'for' loop.  Note that {return-exp} is evaluated in the same scope as the loop variables as bound.  {loop-exp} is evaluated in the child scope repeatedly for each time that the loop bouunding variable and iteration index (if specified) are bound.
+arity: 4
+returns: {evaluated return-exp}
+examples: 
+(for i 4 "finished" (log (concat "step (" i ")" ))) -> "finished"
+(setq order-set (make-string-hashtable))
+(for dinner ("salad" "steak" "pie") (length order-set) (defhash order-set dinner 1))-> 3
+(setq order-map (make-int-hashtable))
+(for (dinner i) ("pizza" "chicken") (get-hash-keys order-map) (defhash order-map i dinner)) -> (0 1 2)
+(setq fact 1)
+(for n 4 fact (set fact (* fact (+ n 1)))) -> 24
+```
+14. mapcar
+```
+signature: (mapcar {loop-spec}:{list or symbol} {loop-list}:{list} {mapped-value-exp}): {list}
+purpose: 'mapcar' also works somewhat differently in JLisp versus other Lisp dialects.  'mapcar' function defines a special child lexical scope where local variables are bound for each value to iterated over before {mapped-value-exp} is evaluated.  {loop-spec} can be either a symbol specifying the loop bounding variable name per iteration or it can be a list of symbols where the first is the loop bounding variable name and the second is the iteration index binding variable name.  The iteration index binding variable is zero-indexed, starting from 0 to one less than the max iterations.  {mapped-value-exp} is evaluated in the child scope for each value in {loop-list} and builds a new list of the same size using the mapped evaluated values for {mapped-value-exp} for each element.
+arity: 3
+returns: {a list of same length as loop-list with each value mapped according to mapped-value-exp}
+examples: 
+(mapcar i (1 2 3) (* i 10)) -> (10 20 30)
+(mapcar (x i) ("breakfast" "lunch" "dinner") (list x i)) -> (("breakfast" 0) ("lunch" 1) ("dinner" 2))
+```
