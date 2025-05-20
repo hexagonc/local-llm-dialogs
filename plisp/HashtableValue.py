@@ -1,9 +1,5 @@
 
-from Value import Value, ValueType, StringValue, ListValue
-from Value import Value, ValueType, ListValue, IntValue
-from Environment import Environment
-from plisp.Parser import NULL_VALUE
-
+from .Value import StringValue, Value, ValueType, ListValue, IntValue, NULL_VALUE
 
 class HashtableValue(Value):
     def __init__(self, value_type):
@@ -25,6 +21,8 @@ class HashtableValue(Value):
 
     def size(self):
         return len(self.map)
+
+
 
 class IntHashtableValue(HashtableValue):
     def __init__(self, item_spec):
@@ -49,6 +47,9 @@ class IntHashtableValue(HashtableValue):
         else:
             return NULL_VALUE
 
+    def serialize(self):
+        inner = " ".join([f"(list {kv_pair[0]} {kv_pair[1].serialize()})" for kv_pair in self.map.items()])
+        return f"(make-int-hashtable (list {inner}))"
 
 class StringHashtableValue(HashtableValue):
     def __init__(self, item_spec):
@@ -72,3 +73,7 @@ class StringHashtableValue(HashtableValue):
             return self.map[key.string()]
         else:
             return NULL_VALUE
+
+    def serialize(self):
+        inner = " ".join([f"(list \"{kv_pair[0]}\" {kv_pair[1].serialize()})" for kv_pair in self.map.items()])
+        return f"(make-string-hashtable (list {inner}))"

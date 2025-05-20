@@ -1,10 +1,11 @@
 import unittest
 
-from Environment import Environment
-from Value import Value, ValueType
-from LispTools import LispTools, add_arithmetic_functions, add_basic_functions
-from SimpleFunctionTemplate import SimpleFunctionTemplate
-from Parser import parse, NULL_VALUE
+from .Environment import Environment
+from .Value import Value, ValueType, NULL_VALUE
+from .LispTools import LispTools, add_arithmetic_functions, add_basic_functions
+from .SimpleFunctionTemplate import SimpleFunctionTemplate
+from .Parser import parse
+
 
 
 class TestLispFunctions(unittest.TestCase):

@@ -1,4 +1,5 @@
-import Environment
+
+
 
 class ValueType:
     STRING = 0
@@ -164,7 +165,7 @@ class ListValue(Value):
         return ListValue([v.copy() for v in self.values])
 
     def serialize(self):
-        return f"({', '.join([v.serialize() for v in self.values])})"
+        return f"(list {' '.join([v.serialize() for v in self.values])})"
 
     def evaluate(self, env):
         if self.size() == 0:
@@ -196,7 +197,7 @@ class StringValue(Value):
     def is_string(self):
         return True
 
-    def string(self):
+    def string(self) -> str:
         return self.value
 
     def copy(self):
@@ -211,12 +212,14 @@ class StringValue(Value):
 
     def evaluate(self, env):
         if self.is_symbol():
-            res = env.get_value(self.value)
+            res = env.has_value(self.value)
             if res is None:
-                return Environment.Environment.NULL_VALUE
+                return NULL_VALUE
             else:
                 return res
         return self
+
+NULL_LITERAL = "F"
 
 class NullValue(Value):
     def __init__(self):
@@ -226,10 +229,13 @@ class NullValue(Value):
         return True
 
     def serialize(self):
-        return Environment.Environment.NULL_LITERAL
+        return NULL_LITERAL
 
     def is_symbol(self):
         return True
 
     def copy(self):
-        return Environment.Environment.NULL_VALUE
+        return self
+
+
+NULL_VALUE = NullValue()

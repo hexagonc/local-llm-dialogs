@@ -1,9 +1,10 @@
-from Value import Value, ListValue
-from Value import IntValue, StringValue, FloatValue
-from Environment import Environment
-from SimpleFunctionTemplate import SimpleFunctionTemplate
-from HashtableValue import StringHashtableValue, IntHashtableValue
-from plisp.Parser import NULL_VALUE
+import time
+
+from .Value import Value, ListValue, NULL_VALUE, IntValue, StringValue, FloatValue
+from .Environment import Environment
+from .SimpleFunctionTemplate import SimpleFunctionTemplate
+from .HashtableValue import StringHashtableValue, IntHashtableValue
+
 
 
 class LispTools:
@@ -23,7 +24,32 @@ class LispTools:
     def make_symbol(string):
         return StringValue(string, is_symbol=True)
 
-def add_basic_functions(env):
+def add_basic_functions(env:Environment):
+
+    def get_datetime_string(template, evaluated_args):
+        from datetime import datetime
+
+        arg_length = len(evaluated_args)
+        use_am_pm = True
+
+        if arg_length > 0:
+            epoch_milli = evaluated_args[0]
+            epoch_seconds = epoch_milli / 1000
+            if arg_length > 1:
+                use_am_pm_arg:Value = evaluated_args[1]
+                use_am_pm = not use_am_pm_arg.is_null()
+        else:
+            epoch_seconds = time.time()
+        dt = datetime.fromtimestamp(epoch_seconds)
+        if use_am_pm:
+            # Format the datetime object into the desired string format
+            formatted_time = dt.strftime("%a %B %d %Y %I:%M:%S %p")
+        else:
+            formatted_time = dt.strftime("%a %B %d %Y %H:%M:%S")
+        return LispTools.make_str(formatted_time)
+
+    env.map_function_template(SimpleFunctionTemplate("get-datetime-string", get_datetime_string))
+
     def to_string(template, evaluated_args):
         if evaluated_args[0].is_string():
             return evaluated_args[0]
@@ -222,6 +248,26 @@ def add_basic_functions(env):
 
     env.map_function("mapcar", mapcar)
 
+    def and_funct(template, evaluation_env):
+        evaluated_value = NULL_VALUE
+        for arg in template.actual_arguments:
+            evaluated_value = arg.evaluate(evaluation_env)
+            if evaluated_value.is_null():
+                return evaluated_value
+        return evaluated_value
+
+    env.map_function("and", and_funct)
+
+    def or_funct(template, evaluation_env):
+        evaluated_value = NULL_VALUE
+        for arg in template.actual_arguments:
+            evaluated_value = arg.evaluate(evaluation_env)
+            if not evaluated_value.is_null():
+                return evaluated_value
+        return evaluated_value
+
+    env.map_function("or", or_funct)
+
     def print_function(template, evaluated_args):
         items = []
         for arg in evaluated_args:
@@ -230,8 +276,9 @@ def add_basic_functions(env):
 
             else:
                 items.append(arg.serialize())
-        print("".join(items))
-        return evaluated_args[-1]
+        o = " ".join(items)
+        print(o)
+        return LispTools.make_str(o)
 
     env.map_function_template(SimpleFunctionTemplate("print", print_function))
 
@@ -251,14 +298,14 @@ def add_basic_functions(env):
     def make_string_hashtable(template, evaluated_args):
         if len(evaluated_args) == 0:
             return StringHashtableValue(LispTools.make_list([]))
-        return StringHashtableValue(evaluated_args)
+        return StringHashtableValue(evaluated_args[0])
 
     env.map_function_template(SimpleFunctionTemplate("make-string-hashtable", make_string_hashtable))
 
     def make_int_hashtable(template, evaluated_args):
         if len(evaluated_args) == 0:
             return IntHashtableValue(LispTools.make_list([]))
-        return IntHashtableValue(evaluated_args)
+        return IntHashtableValue(evaluated_args[0])
 
     env.map_function_template(SimpleFunctionTemplate("make-int-hashtable", make_int_hashtable))
 
@@ -291,7 +338,7 @@ def add_basic_functions(env):
                 return evaluated_args[0].get_value(key)
             else:
                 return NULL_VALUE
-    env.map_function_template(SimpleFunctionTemplate("has-key", has_key))
+    env.map_function_template(SimpleFunctionTemplate("contains-key", has_key))
 
     def get_hash_keys(template, evaluated_args):
 
@@ -325,7 +372,7 @@ def add_basic_functions(env):
     def nth(template, evaluated_args):
         if not evaluated_args[0].is_list():
             raise Exception("First argument to nth must be a list")
-        if not evaluated_args[1].is_int():
+        if not evaluated_args[1].is_integer():
             raise Exception("Second argument to nth must be an integer")
         index = evaluated_args[1].int_value()
         if index < 0 or index >= evaluated_args[0].size():
@@ -334,21 +381,83 @@ def add_basic_functions(env):
 
     env.map_function_template(SimpleFunctionTemplate("nth", nth))
 
+    allow_insert_into_last_pos = True
     def set_nth(template, evaluated_args):
         if not evaluated_args[0].is_list():
             raise Exception("First argument to set-nth must be a list")
-        if not evaluated_args[1].is_int():
+        if not evaluated_args[1].is_integer():
             raise Exception("Second argument to set-nth must be an integer")
         index = evaluated_args[1].int_value()
-        if index < 0 or index >= evaluated_args[0].size():
+
+
+        if index < 0 or index > evaluated_args[0].size():
             raise Exception("Index out of range in set-nth")
-        evaluated_args[0].list()[index] = evaluated_args[2]
+
+        if index == evaluated_args[0].size():
+            if not allow_insert_into_last_pos:
+                raise Exception("Index out of range in set-nth")
+            evaluated_args[0].list().append(evaluated_args[2])
+        else:
+            evaluated_args[0].list()[index] = evaluated_args[2]
         return evaluated_args[2]
 
     env.map_function_template(SimpleFunctionTemplate("set-nth", set_nth))
-    
 
-    
+    def append_item(template, evaluated_args):
+        if not evaluated_args[0].is_list():
+            raise Exception("First argument to append-item must be a list")
+
+        new = [l for l in evaluated_args[0].list()]
+        new.append(evaluated_args[1])
+
+        return LispTools.make_list(new)
+
+    env.map_function_template(SimpleFunctionTemplate("append-item", append_item))
+
+    def append_lists(template, evaluated_args):
+        if not evaluated_args[0].is_list():
+            raise Exception("First argument to append must be a list")
+
+        if not evaluated_args[1].is_list():
+            raise Exception("Second argument to append must be a list")
+
+        return LispTools.make_list(evaluated_args[0].list() + evaluated_args[1].list())
+
+    env.map_function_template(SimpleFunctionTemplate("append", append_lists))
+
+
+    def unbind(template, evaluation_env):
+        key = template.actual_arguments[0].string()
+
+        target_env:Environment = evaluation_env
+        search_env = evaluation_env
+        while search_env is not None:
+            if key in search_env.var_map:
+                target_env = search_env
+                break
+            search_env = search_env.parent
+
+
+        prior = target_env.has_value(key)
+        if prior:
+            target_env.unbind_value(key)
+            return prior
+        return NULL_VALUE
+
+    env.map_function("unbind", unbind)
+
+    def var_exists_p(template, evaluation_env:Environment):
+        key = template.actual_arguments[0].string()
+
+        if key in evaluation_env.var_map:
+            return template.actual_arguments[0]
+        if evaluation_env.parent:
+            return var_exists_p(template, evaluation_env.parent)
+        else:
+            return NULL_VALUE
+
+    env.map_function("var-exists-p", var_exists_p)
+
     return env
 
 

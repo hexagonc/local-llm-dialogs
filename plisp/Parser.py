@@ -1,9 +1,4 @@
-from Value import Value, ValueType, IntValue, ListValue, StringValue, FloatValue, NullValue
-from FunctionTemplate import FunctionTemplate
-
-NULL_LITERAL = "F"
-NULL_VALUE = NullValue()
-
+from .Value import IntValue, ListValue, StringValue, FloatValue
 
 def parse(exp, error_on_incomplete_parser=False):
     resultList = []
