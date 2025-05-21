@@ -10,6 +10,9 @@ from .HiveUtils import build_prompt_from_template, to_svalue
 from LLMChatConfig import CONFIG_MAP
 
 from LLMTools import split_role_message
+from plisp.Value import  Value
+
+
 DIALOG_SEGMENT_BASE = "base"
 DIALOG_SEGMENT_PLISP = "plisp"
 DIALOG_SEGMENT_EXPERIENCE = "all-exp"
@@ -111,6 +114,94 @@ class Hive(MetaRoleHandler):
 
         env.map_function_template(SimpleFunctionTemplate("print-all-meta-roles-as-table", get_existing_topics))
 
+        fname = "switch-to-topic"
+        def switch_to_topic(template, evaluated_args:[Value]):
+
+            if len(evaluated_args) > 0 and evaluated_args[0].is_string():
+                topic:str = evaluated_args[0].string()
+                no_topic_response = f"Could not find a definitive match for: '{topic}'"
+                existing = self.find_existing_topic(topic, no_topic_response, 2)
+
+                if len(existing) == 0:
+                    return no_topic_response
+                else:
+                    self.prior_role = existing[0]
+                    return to_svalue(existing[0])
+            else:
+                raise Exception(f"First argument to {fname} must be a string topic description.")
+
+        env.map_function_template(SimpleFunctionTemplate(fname, switch_to_topic))
+
+
+        fname = "create-topic"
+        def create_topic(template, evaluated_args:[Value]):
+
+            if len(evaluated_args) > 0 and evaluated_args[0].is_string():
+                topic:str = evaluated_args[0].string()
+                no_topic_response = f"Unable to create new topic described by {topic}.  Can you be more specific?"
+                switch_to_new_activity = len(evaluated_args)>1 and not evaluated_args[1].is_null()
+                new_activty, new_role = self.add_dialog_activity(topic)
+                if new_role:
+                    if switch_to_new_activity:
+                        self.prior_role = new_role
+                        return to_svalue(f"Created new topic {topic} with role {new_role} and switching to it")
+                    else:
+                        return to_svalue(f"Created new topic {topic}")
+                else:
+                    return to_svalue(no_topic_response)
+            else:
+                raise Exception(f"First argument to {fname} must be a string topic description.")
+
+        env.map_function_template(SimpleFunctionTemplate(fname, create_topic))
+
+
+        fname = "find-topics-from_description"
+        def find_topics(template, evaluated_args:[Value]):
+
+            if len(evaluated_args) > 0 and evaluated_args[0].is_string():
+                description:str = evaluated_args[0].string()
+                no_topic_response = f"Unable to create new topic described by {description}."
+                results = self.find_existing_topic(description, no_topic_response)
+                if results == no_topic_response:
+                    from plisp.LispTools import make_list
+                    return make_list([])
+                else:
+                    from plisp.LispTools import make_list
+                    matches = results.split("|")
+                    return make_list([v.string().strip() for v in matches])
+            else:
+                raise Exception(f"First argument to {fname} must be a string topic description.")
+
+        env.map_function_template(SimpleFunctionTemplate(fname, find_topics))
+
+        fname = "delete-topic-by-meta-role"
+        def delete_topic(template, evaluated_args:[Value]):
+
+            if len(evaluated_args) > 0 and evaluated_args[0].is_string():
+                meta_role:str = evaluated_args[0].string()
+                new = []
+                found = False
+
+                if meta_role in self.role_handlers:
+                    self.role_handlers.pop(meta_role)
+
+                    for role, (handler, topic, topic_name_short, meta_role) in self.role_handlers.items():
+                        if meta_role == role:
+                            found = True
+                        else:
+                            new.append(to_svalue(meta_role))
+                    from plisp.LispTools import make_list
+                    return make_list(new)
+                else:
+                    from plisp.Value import NULL_VALUE
+                    return NULL_VALUE
+
+            else:
+                raise Exception(f"First argument to {fname} must be a string topic description.")
+
+        env.map_function_template(SimpleFunctionTemplate(fname, delete_topic))
+
+
 
 
     def add_dialog_activity(self, topic:str, meta_role_key = None, topic_name_short = None):
@@ -142,17 +233,20 @@ class Hive(MetaRoleHandler):
         else:
             return (None, f"Unable to add new topic from \"{topic}\".  Please try to come up with a different topic description")
 
-    def find_existing_topic(self, topic, no_topic_key = None):
+    def find_existing_topic(self, topic, no_topic_key = None, max_results = None):
+        if max_results is None:
+            max_results = 5
         if no_topic_key is None:
             no_topic_key = "topic not found"
         search_env = Environment(self.hive_env)
         search_env.map_value("topic-description", to_svalue(topic))
         search_env.map_value("no-match-string", to_svalue(no_topic_key))
+        search_env.map_value("num_results", max_results)
         topic_search_prompt = self.base_hive_topic_search_rules
         processed_prompt = build_prompt_from_template(search_env, topic_search_prompt)
         dialog = parse_roles_from_dialog_string(processed_prompt, True)
         response = process_llm_history(dialog, llm_name=self.model_name, url=self.url, api_key=self.api_key)
-        return response
+        return response.split("|")
 
     def get_delegated_role(self, response):
         return split_role_message(response)[0]

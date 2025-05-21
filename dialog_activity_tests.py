@@ -113,6 +113,20 @@ class MyTestCase(unittest.TestCase):
         resp = hive.user_chat(topic)
         print(f"Done:\n{resp}")
 
+    def test_can_switch_topics_with_lisp(self):
+        hive = Hive()
+
+        topic = "all about my grocery list, including reading, adding and removing items"
+        print(f"Creating dialog activity from: \"{topic}\":")
+        activity, role = hive.add_dialog_activity(topic)
+        activity: DialogActivity
+        role: str
+        self.assertTrue(activity)
+        resp = hive.user_chat("switch to the topic about grocery lists")
+        print(f"Response: {resp}")
+
+        print(hive.__class__.__name__ + "\n")
+
 
 
 
