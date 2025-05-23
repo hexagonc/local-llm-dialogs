@@ -341,7 +341,6 @@ def add_basic_functions(env:Environment):
     env.map_function_template(SimpleFunctionTemplate("contains-key", has_key))
 
     def get_hash_keys(template, evaluated_args):
-
         if evaluated_args[0].is_string_hashtable():
             keys = []
             for key in evaluated_args[0].map.keys():
