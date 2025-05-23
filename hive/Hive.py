@@ -10,7 +10,8 @@ from .HiveUtils import build_prompt_from_template, to_svalue
 from LLMChatConfig import CONFIG_MAP
 
 from LLMTools import split_role_message
-from plisp.Value import  Value
+from plisp.Value import  Value, NULL_VALUE
+from plisp.LispTools import LispTools
 
 
 DIALOG_SEGMENT_BASE = "base"
@@ -25,7 +26,7 @@ DIALOG_SEGMENT_TASK = "current-task"
 DIALOG_SYSTEM_META_ROLE = "system-manager"
 DIALOG_SYSTEM_ROLE_TOPIC = "executes commands against the overall LLM dialog system environment as well as returns system error messages, warnings and instructions"
 DIALOG_SYSTEM_TOPIC_SHORT = "system_control_manager"
-
+USER_ROLE = "user"
 
 class Hive(MetaRoleHandler):
     hive_logging_tag = "o_HIVE_o"
@@ -33,7 +34,6 @@ class Hive(MetaRoleHandler):
     def __init__(self, base_prompt_file = None, env = None, logger:NoeticLogger = None):
         super().__init__("hive", "top level conversation about global configuration and meta state")
 
-        self.max_nested_llm_auto_call = 10
         if logger is None:
             self.logger = NoeticLogger("hive_logs")
         else:
@@ -47,7 +47,7 @@ class Hive(MetaRoleHandler):
         else:
             self.base_prompt = read_prompt_file(base_prompt_file)
 
-        self.user_role = "user"
+        self.user_role = USER_ROLE
         if env:
            self.hive_env = env
         else:
@@ -56,15 +56,17 @@ class Hive(MetaRoleHandler):
             add_filesystem_functions(self.hive_env)
             add_arithmetic_functions(self.hive_env)
 
+
+        self.hive_env.map_value("root-meta-role-key", to_svalue(self.meta_role))
         self.hive_env.map_value("meta-role", to_svalue(self.meta_role))
         self.hive_env.map_value("topic", to_svalue(self.topic))
         self.dialog_experience = []
         self.state_permission_required_for_next_command = False
         self.state_handling_permission_requested_state = False
 
+        self.active_role_index = 0
         self.role_handlers = {}
-        self.prior_role = self.meta_role
-        self.hive_env.map_value("prior-role", to_svalue(self.prior_role))
+        self.topic_visit_history = [self.meta_role]
 
         self.add_hive_local_functions(self.hive_env)
         self.base_hive_topic_creation_rules_fname = "/Users/evolvedgpt/development/projects/local-llm-dialogs/dialogs/base_hive_topic_rules.txt"
@@ -88,7 +90,9 @@ class Hive(MetaRoleHandler):
         system = SystemControlMetaHandler(self)
         system.add_self_to_hive(self)
         self.system_error_handler = system
-
+        self.hive_env.map_value("role-history", LispTools.make_list(
+            ["*" + to_svalue(s) if s == self.get_current_active_role() else to_svalue() for s in
+             self.topic_visit_history]))
 
     def add_meta_role_handler(self, handler:MetaRoleHandler, topic:str, topic_name_short:str, meta_role_key:str ):
         self.role_handlers[meta_role_key] = (handler, topic, topic_name_short, meta_role_key)
@@ -102,6 +106,23 @@ class Hive(MetaRoleHandler):
             return self.dialog_segments[name]
         else:
             return None
+
+    def get_previous_role_in_history(self):
+        if self.active_role_index > 0:
+            return self.topic_visit_history[self.active_role_index - 1]
+        else:
+            return None
+
+    def get_previous_active_role_environment(self):
+        if self.active_role_index > 0:
+            return self.topic_visit_history[self.active_role_index - 1].get_environment()
+        else:
+            return None
+    def run_inference_against_active_role(self, message):
+        active_role = self.get_current_active_role()
+        handler = self.get_handler(active_role)
+        response = handler.chat(self.get_previous_role_in_history() or self.user_role, message, self.get_previous_active_role_environment())
+        return response
 
     def add_hive_local_functions(self, env:Environment):
         from plisp.SimpleFunctionTemplate import SimpleFunctionTemplate
@@ -123,15 +144,21 @@ class Hive(MetaRoleHandler):
                 existing = self.find_existing_topic(topic, no_topic_response, 2)
 
                 if len(existing) == 0:
-                    return no_topic_response
+                    return NULL_VALUE
                 else:
-                    self.prior_role = existing[0]
-                    return to_svalue(existing[0])
+                    self.append_active_role_to_history(topic)
+
+                    if len(evaluated_args) > 1 and len(evaluated_args[1].string().strip()) > 0:
+                        initial_prompt = evaluated_args[1].string()
+                        initial_response = self.run_inference_against_active_role(initial_prompt)
+                        return to_svalue(initial_response)
+                    else:
+                        return to_svalue("")
+
             else:
                 raise Exception(f"First argument to {fname} must be a string topic description.")
 
         env.map_function_template(SimpleFunctionTemplate(fname, switch_to_topic))
-
 
         fname = "create-topic"
         def create_topic(template, evaluated_args:[Value]):
@@ -143,10 +170,16 @@ class Hive(MetaRoleHandler):
                 new_activty, new_role = self.add_dialog_activity(topic)
                 if new_role:
                     if switch_to_new_activity:
-                        self.prior_role = new_role
-                        return to_svalue(f"Created new topic {topic} with role {new_role} and switching to it")
+                        self.append_active_role_to_history(new_role)
+
+                        if len(evaluated_args) > 2 and len(evaluated_args[2].string().strip()) > 0:
+                            initial_prompt = evaluated_args[2].string()
+                            initial_response = self.run_inference_against_active_role(initial_prompt)
+                            return to_svalue(f"Created new topic {topic} with role {new_role} and switching to it. \nResponse to \"{initial_prompt}\" was \"{initial_response}\"")
+                        else:
+                            return to_svalue(f"Created new topic {topic} with role {new_role} and setting that as the active role")
                     else:
-                        return to_svalue(f"Created new topic {topic}")
+                        return to_svalue(f"Created new topic {topic} with role {new_role}")
                 else:
                     return to_svalue(no_topic_response)
             else:
@@ -201,9 +234,6 @@ class Hive(MetaRoleHandler):
 
         env.map_function_template(SimpleFunctionTemplate(fname, delete_topic))
 
-
-
-
     def add_dialog_activity(self, topic:str, meta_role_key = None, topic_name_short = None):
         from .DialogActivity import DialogActivity
         topic_builder_prompt = f"Proposed new dialog topic handler.  The topic is \"{topic}\".  "
@@ -234,6 +264,7 @@ class Hive(MetaRoleHandler):
             return (None, f"Unable to add new topic from \"{topic}\".  Please try to come up with a different topic description")
 
     def find_existing_topic(self, topic, no_topic_key = None, max_results = None):
+        from plisp.LispTools import LispTools
         if max_results is None:
             max_results = 5
         if no_topic_key is None:
@@ -241,7 +272,7 @@ class Hive(MetaRoleHandler):
         search_env = Environment(self.hive_env)
         search_env.map_value("topic-description", to_svalue(topic))
         search_env.map_value("no-match-string", to_svalue(no_topic_key))
-        search_env.map_value("num_results", max_results)
+        search_env.map_value("num_results", LispTools.make_integer(max_results))
         topic_search_prompt = self.base_hive_topic_search_rules
         processed_prompt = build_prompt_from_template(search_env, topic_search_prompt)
         dialog = parse_roles_from_dialog_string(processed_prompt, True)
@@ -254,85 +285,70 @@ class Hive(MetaRoleHandler):
     def get_message_to_delegated_llm(self, response):
         return split_role_message(response)[1]
 
+    def get_handler(self, role):
+        if role in self.role_handlers:
+            return self.role_handlers[role][0]
+        else:
+            return None
+
+    def get_current_active_role(self):
+        if self.active_role_index < 0:
+            return None
+        elif self.active_role_index >= len(self.topic_visit_history):
+            return self.topic_visit_history[self.active_role_index]
+        else:
+            return None
+
+    def configure_next_active_role(self):
+        if self.active_role_index <= len(self.topic_visit_history):
+            self.active_role_index +=1
+            return self.active_role_index
+        else:
+            return None
+
+    def configure_prior_active_role(self):
+        if self.active_role_index > 0:
+            self.active_role_index -=1
+            return self.active_role_index
+        else:
+            return None
+
+    def append_active_role_to_history(self, new_role:str):
+        if self.get_current_active_role() == new_role:
+            return new_role
+        target_index = self.configure_next_active_role()
+        if target_index:
+            self.topic_visit_history[target_index] = new_role
+            self.topic_visit_history = self.topic_visit_history[0:target_index]
+        else:
+            self.topic_visit_history.append(new_role)
+            self.configure_next_active_role()
+
     def user_chat(self, message:str) -> str:
         self.logger.logDebug(Hive.hive_logging_tag,
-                            f"Sending message: {message} from user to {self.prior_role}", Hive.verbose)
+                            f"Sending message: {message} from user to {self.get_current_active_role()}", Hive.verbose)
+        self.hive_env.map_value("prior-roles", LispTools.make_list([to_svalue(s) for s in self.topic_visit_history]))
 
-        prior = [self.meta_role]
-        prior_delegate = [self]
         # Hive tries to answer user's question directly
-        initial_response = self.chat("user", message,None)
+        active_role = self.topic_visit_history[-1]
+        initial_response = self.chat(active_role, message,None)
         delegated_role = self.get_delegated_role(initial_response)
         message_to_delegated_role = self.get_message_to_delegated_llm(initial_response)
 
         if delegated_role is None:
-            self.prior_role = self.meta_role
             return message_to_delegated_role
         delegated_role = delegated_role[:-1]
-        role_that_delegated = prior[-1]
-        # In: -> delegated_role, message_to_delegated_role, role_that_delegated
-        for i in range(self.max_nested_llm_auto_call):
-            # Process message with delegated handler
-            delegate_handler = self.role_handlers[delegated_role][0]
-            response_from_delegate = delegate_handler.chat(role_that_delegated, message_to_delegated_role, prior_delegate[-1].get_environment())
 
-            # This may produce a new delegated role
-            next_delegated_role = self.get_delegated_role(response_from_delegate)
-            next_message = self.get_message_to_delegated_llm(response_from_delegate)
-            if next_delegated_role is None and next_message:
-                return next_message
-            next_delegated_role = next_delegated_role[:-1]
-            next_message_to_delegated_role = self.get_message_to_delegated_llm(response_from_delegate)
-            self.logger.logInfo(Hive.hive_logging_tag,
-                                f"{role_that_delegated} -> {delegated_role} ==> {next_delegated_role} via: '{message_to_delegated_role}'",
-                                Hive.verbose)
+        # Process message with delegated handler
+        delegate_handler = self.get_handler(delegated_role)
+        response_from_delegate = delegate_handler.chat(active_role, message_to_delegated_role, self.get_handler(active_role).get_environment())
 
-            if next_delegated_role is None:
-                # AI is talking to user
-                # treat as error
-                potential_error = self.system_error_handler.set_error_message(next_delegated_role, delegated_role, next_message_to_delegated_role)
-                next_delegated_role, next_message_to_delegated_role = split_role_message(potential_error)
-                # AI is talking to user
-                # This allows the user to resume the conversation in the next call to self.user_chat
-                if next_delegated_role is None:
-                    self.prior_role = delegated_role
-                    return next_message_to_delegated_role
-                next_delegated_role = next_delegated_role[:-1]
+        # Update active
+        role_that_delegated = self.get_delegated_role(response_from_delegate)
+        message_to_delegated_role = self.get_message_to_delegated_llm(response_from_delegate)
+        _, final_response = self.chat(role_that_delegated, message_to_delegated_role,None)
+        return final_response
 
-            # Can only delegate to a different role
-            if next_delegated_role == delegated_role:
-                # This handler needs to receive a chastisement from the error
-                # This is an intervening role from the error system:
-
-                err_role = self.system_error_handler.meta_role
-                self.system_error_handler.set_error_message(next_delegated_role, delegated_role, next_message_to_delegated_role)
-                # overwrite the original delegate_handler
-
-                corrected_response_from_delegate = self.system_error_handler.chat(err_role, "n/a",None)
-                # Now we check the updated
-                next_delegated_role = self.get_delegated_role(corrected_response_from_delegate)
-                next_message_to_delegated_role = self.get_message_to_delegated_llm(corrected_response_from_delegate)
-                role_that_delegated = delegated_role
-                if next_delegated_role is None:
-                    # AI decided to ask the user for help
-                    self.prior_role = delegated_role
-                    return next_message_to_delegated_role
-                else:
-                    next_delegated_role = next_delegated_role[:-1]
-            else:
-                self.prior_role = delegated_role
-                prior.append(delegated_role)
-                role_that_delegated = delegated_role
-
-            delegated_role = next_delegated_role
-            message_to_delegated_role = next_message_to_delegated_role
-            self.hive_env.map_value("prior-role", to_svalue(role_that_delegated))
-            # Now loop around and perform the delegation
-
-        self.logger.logWarning(Hive.hive_logging_tag,
-                               "Maximum LLM self communication reached.  User must manually approve further communication",
-                               Hive.verbose)
-        return message_to_delegated_role
 
 
     def chat(self, client_meta_role:str, message:str, client_env:Optional[Environment] = None) -> str:
