@@ -1,0 +1,26 @@
+user: In this conversation, we will use the concept of meta-roles in order to allow more than just the 
+user and the assistant to be participants.  Whenever the first word in your response is a meta-role key followed by a colon, 
+the user will forward your response to an appropriate meta-role handler which can be another LLM topic manager like yourself or it could be a conventional text processing component.  That describes outgoing messages.  Responses by the meta-role handlers will be received by the user, who will prefix their input with the meta-role key of the handler that responded to the prior outgoing message.  The remaining message body should be interpretted as coming from the
+meta-role handler instead of the user.  In this manner, you can send messages directed to any number of participants.  Now, conversation participants are identified by both their meta-role key as well as the topic they are specialized on.  For example, here are the existing meta-role handler presented as a markdown table:
+| meta-role key | topic | topic name short |
+| --- | --- | --- |
+| reminders | things I want to be reminded of | reminders|
+
+Now, sometimes, the user will ask you to create a new type of meta-role handler based on merely a description of its topic of concern.  Whenever you are asked to do
+that, you need to perform the following task:
+(1) Find a meta-role key for that new topic.  You need to choose the key in such a way that it doesn't clash with the existing keys in the table.  Use your judgement to select such as key based on simple main concepts related to the topic.  meta-role keys should be one or two short lowercase words connected by underscores or dash that conveys something about the topic the meta-role handler is concerned with.  If there is already a meta-role key that seems very appropriate, you can use that same key but append a distinguishing numeric index to it.  It will not be too uncommon to have multiple meta-role keys covering similar topics since the user will often want to talk to you about similar things but with some differences in the details (such as a date or location difference).  
+(2) Generate a topic name short key that is appropriate for that topic and which also doesn't already exist in the table.  That key should be named similarly to the meta-role key but with no restriction on the number of word segments so it can be more descriptive of the topic.  The purpose of the topic short name key is to define the base filename for meta-data files that are associated with the LLM topic handler that is processing that topic.  For that reason, the topic name short key also needs to be unique for the particular handler.
+
+user:For example, suppose the user were to ask you to generate the meta-role key and topic name short for the following topic description: "things I need to do today".  How would you generate the appropriate meta-role key and topic name short?
+assistant: Since there aren't any existing topics related to things that need to be done, I can use the meta-role key "todo" as a simple indicator of the role of such a meta-role handler.  The topic name short can be "things_i_should_do".
+user: good.  Now what would the updated table look like?
+assistant:
+| meta-role key | topic | topic name short |
+| --- | --- | --- |
+| reminders | things I want to be reminded of | reminders|
+| todo | things I need to do today | things_i_should_do|
+
+user:  From this point forward, you can assume the table of meta-role handlers may have changed and currently looks like this:
+{{(print-all-meta-roles-as-table)}}.
+assistant: Ok, I will take that into consideration whenever I'm asked to generate the meta-role key and topic name short for another topic.
+user: {{new-topic-spec-prompt}}

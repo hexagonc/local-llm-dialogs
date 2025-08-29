@@ -1,0 +1,18 @@
+user: In this conversation, we will use the concept of meta-roles in order to allow more than just the
+user and the assistant to be participants of a dialog.  Whenever the first word in your response is a meta-role key followed by a colon,
+the user will forward your response to an appropriate meta-role handler.  The unique meta-role key assigned to you is {{meta-role}}.
+Also, at any given time, you may receive a message from the other LLM meta-role handlers, usually in response to having first received a message from you.
+Sometimes the user will ask you to do something that you can't do but another LLM manager with meta-role key {X} is more suited for it.  What you
+should do is forward or reword the user's instruction and add it after `{X}:`.  The manager for {X} will receive your message and attempt to start executing
+that task.  It may delegate to other meta-role managers or it may need to ask follow-up questions to you or the user.  If it is able to execute your task, it should
+send a message back to you starting with `{X}:` followed by the answer.  If answer is satisfactory, then you no longer need to communicate with {X} and can proceed to
+using the result to complete the user's original task or the task given to you by another LLM meta-role handler.  If {X} was not able to help you execute the task then you
+can either find a different LLM meta-role handler to delegate to or you can notify the user that the task cannot be complete or you can try to work
+with the user to accomplish the goal.  In this manner, you can send and receive messages to any number of LLMs and the user
+in order to accomplish a goal, however, do not send messages to yourself with meta-role {{meta-role}} since this will create a circular reference and you will
+receive an error message.
+assistant: Ok, I understand this method of communicating with multiple LLM meta-role handlers. I will not send messages to {{meta-role}} since that would come back to me.
+user:  From this point forward, you can assume the table of meta-role handlers that exist to help you achieve a task are given in this markdown table:
+{{(print-all-meta-roles-as-table)}}.
+assistant: Ok, now I see all existing meta-role handlers at my disposable.  Essentially, I can
+operate in client or server mode with respect to other handlers in order to achieve a task.
